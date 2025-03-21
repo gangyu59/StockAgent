@@ -1,1 +1,192 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f9;
+}
 
+/* 新增样式 */
+#container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+
+h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    color: #333;
+}
+
+#app {
+    width: 100%;
+    max-width: 800px;
+    padding: 20px;
+}
+
+/* 其他样式保持不变 */
+
+#input-area, #stock-list-area, #action-buttons, #output-area, #chart-area {
+    margin-bottom: 20px;
+}
+
+button {
+    padding: 8px 16px; /* 按钮变小 */
+    margin-right: 3px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 110px; /* 按钮宽度自适应 */
+    text-align: center;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+#stock-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#stock-list li {
+    padding: 10px;
+    background-color: #e0e0e0;
+    margin-bottom: 5px;
+    border-radius: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#stock-list li button {
+    background-color: #ff4d4d;
+    border: none;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+#stock-list li button:hover {
+    background-color: #cc0000;
+}
+
+#stock-list-area {
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    background-color: white;
+    position: relative; /* 用于定位 icon */
+}
+
+#stock-list-area h3 {
+    margin-top: 0;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#toggle-icon {
+    font-size: 18px;
+    cursor: pointer;
+}
+
+#action-buttons {
+    display: flex;
+    gap: 10px; /* 按钮之间的间距 */
+}
+
+#output-content {
+    background-color: white;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#chart-area {
+    display: none; /* 默认隐藏，点击按钮后显示 */
+}
+
+/* 新增样式 */
+#stock-list-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+#stock-list-label {
+    font-size: 16px;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+#stock-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#stock-list li {
+    padding: 8px 12px;
+    background-color: #e0e0e0;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+#stock-list li button {
+    background-color: #ff4d4d;
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+#stock-list li button:hover {
+    background-color: #cc0000;
+}
+
+#toggle-icon {
+    font-size: 18px;
+    cursor: pointer;
+    margin-left: 10px;
+}
+
+#expanded-stock-list {
+    display: none; /* 默认隐藏 */
+    list-style-type: none;
+    padding: 0;
+    margin: 10px 0 0 0;
+    background-color: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+#expanded-stock-list li {
+    padding: 8px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+}
+
+#expanded-stock-list li:hover {
+    background-color: #f0f0f0;
+}
