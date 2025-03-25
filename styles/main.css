@@ -127,6 +127,7 @@ button:hover {
     font-size: 16px;
     font-weight: bold;
     margin-right: 10px;
+    flex-shrink: 0; /* 防止标签被压缩 */
 }
 
 #stock-list {
@@ -155,6 +156,11 @@ button:hover {
     border-radius: 3px;
     cursor: pointer;
     font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
 }
 
 #stock-list li button:hover {
@@ -177,6 +183,7 @@ button:hover {
     border-radius: 5px;
     max-height: 150px;
     overflow-y: auto;
+    margin-left: 100px; /* 与标签对齐 */
 }
 
 #expanded-stock-list li {
@@ -189,4 +196,28 @@ button:hover {
 
 #expanded-stock-list li:hover {
     background-color: #f0f0f0;
+}
+
+#expanded-stock-list li.selected {
+    background-color: #007bff;
+    color: white;
+}
+
+#expanded-stock-list li button {
+    background-color: #ff4d4d;
+    border: none;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+}
+
+#expanded-stock-list li button:hover {
+    background-color: #cc0000;
 }

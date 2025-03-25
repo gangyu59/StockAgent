@@ -1,0 +1,169 @@
+/* 功能样式：输入框 */
+#stock-code {
+    height: 25px; /* 增加输入框高度 */
+    font-size: 16px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 180px;
+		margin-right: 8px;
+}
+
+#stock-code:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+/* 输出区样式 */
+#output-content {
+    background-color: white;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    max-height: 300px; /* 设置最大高度 */
+    overflow-y: auto;  /* 添加垂直滚动条 */
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+}
+
+#output-content h4 {
+    margin-top: 0;
+    color: #007bff;
+}
+
+#output-content p {
+    margin: 5px 0;
+}
+
+#output-content .section {
+    margin-bottom: 20px;
+}
+
+#output-content .section-title {
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 5px;
+}
+
+#chart-area {
+    display: none;
+}
+
+/* 默认隐藏状态 */
+.loading-hidden {
+    display: none;
+}
+
+/* 显示 hourglass */
+.status-visible {
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    top: 70%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0);
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0);
+    z-index: 9999;
+}
+
+/* Hourglass 动画 */
+.hourglass {
+    width: 30px;
+    height: 30px;
+    border: 6px solid #3e2723;
+    border-radius: 100%;
+    border-top-color: transparent;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.stock-news-container {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f9f9f9;
+    border-radius: 8px;
+}
+
+.stock-news-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.news-item {
+    display: flex;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.news-rank {
+    font-weight: bold;
+    color: #555;
+    margin-right: 15px;
+    font-size: 1.1em;
+}
+
+.news-content {
+    flex: 1;
+}
+
+.news-date {
+    display: inline-block;
+    background: #e1f5fe;
+    color: #0288d1;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.85em;
+    margin-right: 10px;
+}
+
+.news-title {
+    color: #1a73e8;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.05em;
+    line-height: 1.4;
+}
+
+.news-title:hover {
+    text-decoration: underline;
+}
+
+.news-summary {
+    color: #555;
+    margin: 8px 0 0;
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+.loading, .no-news {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.error {
+    color: #d32f2f;
+    padding: 20px;
+    text-align: center;
+}
+
+.news-footer {
+    margin-top: 20px;
+    text-align: right;
+    color: #999;
+    font-size: 0.85em;
+}
