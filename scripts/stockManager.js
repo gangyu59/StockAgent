@@ -59,6 +59,7 @@ window.stockManager = {
 
     // 获取选中的股票
     getSelectedStocks: function () {
-        return Array.from(document.querySelectorAll('#expanded-stock-list li')).map(li => li.textContent.replace('×', '').trim());
+        return Array.from(document.querySelectorAll('#expanded-stock-list li.selected'))
+            .map(li => li.textContent.replace('×', '').trim());
     }
 };

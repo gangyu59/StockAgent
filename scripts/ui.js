@@ -13,7 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 添加股票到清单
     document.getElementById('add-stock').addEventListener('click', () => {
         const stockCode = document.getElementById('stock-code').value.trim().toUpperCase();
-        window.stockManager.addStock(stockCode);
+        if (stockCode) {
+            window.stockManager.addStock(stockCode);
+        }
     });
 
     // 展开/收缩股票清单
@@ -30,10 +32,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 删除股票
-    document.getElementById('stock-list').addEventListener('click', (event) => {
+    document.addEventListener('click', (event) => {
         if (event.target.classList.contains('delete-stock')) {
             const stockCode = event.target.parentElement.textContent.replace('×', '').trim();
             window.stockManager.deleteStock(stockCode);
+        }
+    });
+
+    // 选择股票
+    document.getElementById('expanded-stock-list').addEventListener('click', (event) => {
+        const target = event.target;
+        if (target.tagName === 'LI') {
+            target.classList.toggle('selected'); // 切换选中状态
         }
     });
 
@@ -47,11 +57,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 搜索新闻
+    // 搜索新闻按钮点击事件
     document.getElementById('search-news').addEventListener('click', () => {
         const selectedStocks = window.stockManager.getSelectedStocks();
         if (selectedStocks.length > 0) {
-            fetchStockNews(selectedStocks);
+            window.newsSearch.searchStockNews(selectedStocks);
         } else {
             showMessage('请先添加股票代码！');
         }
@@ -77,17 +87,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
-
-// 以下函数需要根据实际需求实现
-function fetchStockData(stockCodes) {
-    console.log('Fetching data for:', stockCodes);
-    // 调用 Alpha Vantage API 获取数据
-}
-
-function fetchStockNews(stockCodes) {
-    console.log('Fetching news for:', stockCodes);
-    // 调用新闻 API 获取新闻
-}
 
 function analyzeStockWithAI(stockCodes) {
     console.log('Analyzing stocks with AI:', stockCodes);
