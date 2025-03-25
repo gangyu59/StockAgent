@@ -4,7 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>StockAgent</title>
-    <link rel="stylesheet" href="styles/main.css">
+    <!-- 引入 CSS 文件 -->
+    <link rel="stylesheet" href="styles/base.css">
+    <link rel="stylesheet" href="styles/components.css">
+    <link rel="stylesheet" href="styles/features.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 <body>
@@ -19,7 +22,7 @@
 
             <!-- 清单维护区 -->
             <div id="stock-list-container">
-                <span id="stock-list-label">感兴趣的股票：</span>
+                <span id="stock-list-label">关注股票清单：</span>
                 <ul id="stock-list"></ul>
                 <span id="toggle-icon"><i class="fas fa-chevron-down"></i></span>
             </div>
@@ -36,6 +39,9 @@
             <!-- 输出区 -->
             <div id="output-area">
                 <h3>结果展示</h3>
+							  <div id="loading-indicator" class="loading-hidden">
+		               <div class="hourglass"></div>
+		            </div>
                 <div id="output-content"></div>
             </div>
 
@@ -49,14 +55,21 @@
     <!-- 引入 Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- 引入 JavaScript 文件 -->
-    <script type="module" src="scripts/config.js"></script>
-    <script type="module" src="scripts/utils.js"></script>
-    <script type="module" src="scripts/stockManager.js"></script>
-    <script type="module" src="scripts/dataFetching.js"></script>
-    <script type="module" src="scripts/newsSearch.js"></script>
-    <script type="module" src="scripts/aiAnalysis.js"></script>
-    <script type="module" src="scripts/reportGeneration.js"></script>
-    <script type="module" src="scripts/chartDisplay.js"></script>
-    <script type="module" src="scripts/ui.js"></script>
+    <script src="scripts/config.js"></script>
+    <script src="scripts/utils.js"></script>
+		<script src="apis/apiCore.js"></script>
+    <script src="apis/gpt.js"></script>
+    <script src="apis/deepseek.js"></script>
+    <script src="apis/ark.js"></script>
+    <script src="apis/dalle.js"></script>
+    <script src="apis/claude.js"></script>
+		<script src="scripts/dataStorage.js"></script>
+    <script src="scripts/stockManager.js"></script>
+    <script src="scripts/dataFetching.js"></script>
+    <script src="scripts/newsSearch.js"></script>
+    <script src="scripts/aiAnalysis.js"></script>
+    <script src="scripts/reportGeneration.js"></script>
+    <script src="scripts/chartDisplay.js"></script>
+    <script src="scripts/ui.js"></script>
 </body>
 </html>
