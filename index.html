@@ -9,6 +9,8 @@
     <link rel="stylesheet" href="styles/components.css">
     <link rel="stylesheet" href="styles/features.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
 </head>
 <body>
     <div id="container">
@@ -49,6 +51,8 @@
             <div id="chart-area">
                 <canvas id="stock-chart"></canvas>
             </div>
+						<!-- 在chart-area下方添加 -->
+						<div id="debug-area" style="color:red; padding:10px; font-family:monospace;"></div>
         </div>
     </div>
 
@@ -63,6 +67,7 @@
     <script src="apis/ark.js"></script>
     <script src="apis/dalle.js"></script>
     <script src="apis/claude.js"></script>
+		<script src="scripts/chartRenderer.js"></script>
 		<script src="scripts/dataStorage.js"></script>
     <script src="scripts/stockManager.js"></script>
     <script src="scripts/dataFetching.js"></script>
@@ -70,6 +75,6 @@
     <script src="scripts/aiAnalysis.js"></script>
     <script src="scripts/reportGeneration.js"></script>
     <script src="scripts/chartDisplay.js"></script>
-    <script src="scripts/ui.js"></script>
+    <script src="scripts/main.js"></script>
 </body>
 </html>
