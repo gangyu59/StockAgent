@@ -1,6 +1,6 @@
 // scripts/newsSearch.js
 
-// 获取股票新闻（保持原有逻辑不变）
+// 获取股票新闻
 async function fetchStockNews(symbol, limit = 10) {
     const url = `${NEWS_API_URL}?q=${symbol}&apiKey=${NEWS_API_KEY}&language=en&sortBy=publishedAt`;
     try {
@@ -11,7 +11,7 @@ async function fetchStockNews(symbol, limit = 10) {
             throw new Error(`News API error: ${data.message || 'Unknown error'}`);
         }
 
-        // 添加日期处理和摘要字段（保持原有结构）
+        // 添加日期处理和摘要字段
         const articles = data.articles || [];
         const newsList = articles
             .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt)) // 时间倒序
@@ -30,7 +30,7 @@ async function fetchStockNews(symbol, limit = 10) {
     }
 }
 
-// 展示新闻列表（完全重构的展示逻辑）
+// 展示新闻列表
 function displayNewsList(newsList, symbol) {
     const outputElement = document.getElementById('output-content');
     if (!outputElement) return;
@@ -65,8 +65,7 @@ function displayNewsList(newsList, symbol) {
     outputElement.innerHTML = newsHTML;
 }
 
-/**************** 新增辅助函数 ****************/
-// 日期格式化函数（保持原有逻辑新增）
+// 日期格式化函数
 function formatDate(isoString) {
     if (!isoString) return '未知日期';
     try {
@@ -77,7 +76,7 @@ function formatDate(isoString) {
     }
 }
 
-// 摘要处理函数（新增）
+// 摘要处理函数
 function truncateSummary(text, maxLength = 80) {
     if (!text) return '';
     const cleanText = text.replace(/<\/?[^>]+(>|$)/g, ""); // 移除HTML标签
@@ -86,15 +85,12 @@ function truncateSummary(text, maxLength = 80) {
         : cleanText;
 }
 
-// 搜索新闻（保持原有结构微调）
-async function searchStockNews(stockCodes) {
-    if (!Array.isArray(stockCodes)) stockCodes = [stockCodes];
-    
+// 搜索新闻
+async function searchStockNews(stockCode) {
     const outputElement = document.getElementById('output-content');
-    if (outputElement) outputElement.innerHTML = '<div class="loading">加载中...</div>';
-
+		
     try {
-        for (const stockCode of stockCodes) {
+				toggleHourglass(true);
             const newsList = await fetchStockNews(stockCode);
             if (newsList.length > 0) {
                 displayNewsList(newsList, stockCode); // 添加股票代码参数
@@ -102,16 +98,16 @@ async function searchStockNews(stockCodes) {
                 outputElement.innerHTML = `<p class="no-news">未找到相关新闻</p>`;
             }
             await new Promise(resolve => setTimeout(resolve, 1000));
-        }
     } catch (error) {
         console.error('新闻搜索失败:', error);
         if (outputElement) {
             outputElement.innerHTML = `<p class="error">新闻获取失败: ${error.message}</p>`;
         }
     }
+		toggleHourglass(false);
 }
 
-// 保持原有导出不变
+// 导出
 window.newsSearch = {
     searchStockNews
 };

@@ -5,6 +5,14 @@ function showMessage(message) {
     alert(message);
 }
 
+/*
+// 在应用初始化时调用（如main.js/入口文件）
+(async function init() {
+    await clearDatabase(); // 先清库
+    // 然后继续其他初始化
+})();
+*/
+
 // 初始化
 document.addEventListener('DOMContentLoaded', () => {
     const stockList = window.stockManager.loadStockList(); // 加载股票清单

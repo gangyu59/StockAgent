@@ -1,187 +1,199 @@
 // scripts/dataStorage.js
-
 var StockDB = (function() {
-    // 私有配置
-    var DB_CONFIG = {
-        name: 'StockDataDB',
+    // 数据库配置
+    const DB_CONFIG = {
+        name: 'StockDataDB_v2',  // 新数据库名避免冲突
         version: 1,
-        storeName: 'stocks'
+        storeName: 'stock_data',
+        keyPath: 'symbol'
     };
 
-    // 私有方法：初始化数据库
-    function _initDB(callback) {
-        var request = indexedDB.open(DB_CONFIG.name, DB_CONFIG.version);
+    // 私有方法：初始化数据库连接
+    function _getDatabase() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_CONFIG.name, DB_CONFIG.version);
 
-        request.onerror = function(event) {
-            console.error('DB init error:', event.target.error);
-            callback(event.target.error, null);
-        };
-
-        request.onsuccess = function(event) {
-            callback(null, event.target.result);
-        };
-
-        request.onupgradeneeded = function(event) {
-            var db = event.target.result;
-            if (!db.objectStoreNames.contains(DB_CONFIG.storeName)) {
-                var store = db.createObjectStore(DB_CONFIG.storeName, {
-                    keyPath: 'symbol',
-                    autoIncrement: false
-                });
-                console.log('Object store created');
-            }
-        };
-    }
-
-    // 核心操作方法
-    function _executeDBOperation(mode, operation, data, callback) {
-        _initDB(function(err, db) {
-            if (err) {
-                callback(err, null);
-                return;
-            }
-
-            var tx = db.transaction(DB_CONFIG.storeName, mode);
-            var store = tx.objectStore(DB_CONFIG.storeName);
-            
-            var request;
-            switch (operation) {
-                case 'put':
-                    request = store.put(data);
-                    break;
-                case 'get':
-                    request = store.get(data.symbol);
-                    break;
-                case 'delete':
-                    request = store.delete(data.symbol);
-                    break;
-                case 'getAll':
-                    request = store.getAll();
-                    break;
-                case 'clear':
-                    request = store.clear();
-                    break;
-            }
-
-            request.onsuccess = function() {
-                callback(null, operation === 'get' ? request.result : true);
+            request.onerror = (event) => {
+                console.error('Database error:', event.target.error);
+                reject(event.target.error);
             };
-            request.onerror = function(event) {
-                callback(event.target.error, null);
+
+            request.onsuccess = (event) => {
+                resolve(event.target.result);
+            };
+
+            request.onupgradeneeded = (event) => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(DB_CONFIG.storeName)) {
+                    const store = db.createObjectStore(DB_CONFIG.storeName, {
+                        keyPath: DB_CONFIG.keyPath
+                    });
+                    store.createIndex('type', 'type', { unique: false });
+                    console.log('Database store created');
+                }
             };
         });
     }
 
-    // ================ 公有API ================
+    // 私有方法：执行数据库事务
+		async function _executeTransaction(mode, operation, data) {
+		    let db;
+		    try {
+		        // 1. 获取数据库连接（保持原有）
+		        db = await _getDatabase();
+		        
+		        return new Promise((resolve, reject) => {
+		            // 2. 添加事务错误监听（新增）
+		            const tx = db.transaction(DB_CONFIG.storeName, mode);
+		            tx.onerror = (event) => {
+		                console.error('[DB] 事务失败:', event.target.error);
+		                db.close(); // 确保关闭连接
+		                reject(event.target.error);
+		            };
+		
+		            const store = tx.objectStore(DB_CONFIG.storeName);
+		            
+		            // 3. 操作分发（保持您的原有逻辑）
+		            let request;
+		            switch (operation) {
+		                case 'put': request = store.put(data); break;
+		                case 'get': request = store.get(data); break;
+		                case 'delete': request = store.delete(data); break;
+		                case 'getAll': request = store.getAll(); break;
+		                default: 
+		                    db.close();
+		                    return reject(new Error(`无效操作: ${operation}`));
+		            }
+		
+		            request.onsuccess = () => {
+		                if (operation === 'get' || operation === 'getAll') {
+		                    console.log('[DB] 操作成功:', { 
+		                        operation,
+		                        dataSize: Array.isArray(request.result) 
+		                            ? request.result.length 
+		                            : 1
+		                    });
+		                }
+		                db.close(); // 成功时关闭连接
+		                resolve(request.result);
+		            };
+		            
+		            request.onerror = (event) => {
+		                console.error('[DB] 操作失败:', {
+		                    operation,
+		                    error: event.target.error,
+		                    data: operation === 'put' ? data : null
+		                });
+		                db.close(); // 失败时关闭连接
+		                reject(event.target.error);
+		            };
+		        });
+		    } catch (err) {
+		        // 4. 全局错误处理（新增）
+		        if (db) db.close();
+		        console.error('[DB] 执行事务异常:', err);
+		        throw err;
+		    }
+		}
+
     return {
-        // 保存/更新数据
-        saveStockData: function(symbol, data, dataType, callback) {
-            _executeDBOperation('readwrite', 'put', {
-                symbol: symbol,
-                data: data,
-                type: dataType || 'daily',
-                lastUpdated: new Date().toISOString()
-            }, callback || function(err) {
-                if (err) console.error('Save failed:', err);
-            });
+        /**
+         * 保存股票数据
+         * @param {string} symbol - 股票代码
+         * @param {object} data - 要保存的数据
+         * @param {string} type - 数据类型
+         * @returns {Promise<void>}
+         */
+        async saveStockData(symbol, data, type = 'daily') {
+				    try {
+				        const record = {
+				            symbol: symbol.toUpperCase(),
+				            data: data,
+				            type: type,
+				            lastUpdated: new Date().toISOString()
+				        };
+				
+				        console.log('[DB] 准备保存记录:', {  // 调试日志
+				            symbol: symbol,
+				            dataLength: Array.isArray(data?.history) ? data.history.length : 'unknown',
+				            type: type
+				        });
+				
+				        await _executeTransaction('readwrite', 'put', record);
+				        console.log('[DB] 保存成功:', symbol);  // 成功日志
+				    } catch (error) {
+				        console.error('[DB] 保存失败:', {  // 详细错误日志
+				            symbol: symbol,
+				            error: error,
+				            errorStack: error.stack,
+				            time: new Date().toISOString()
+				        });
+				        throw error;  // 保持原有错误抛出
+				    }
+				},
+
+        /**
+         * 加载股票数据
+         * @param {string} symbol - 股票代码
+         * @returns {Promise<object|null>}
+         */
+        async loadStockData(symbol) {
+            return await _executeTransaction('readonly', 'get', symbol.toUpperCase());
         },
 
-        // 加载数据
-        loadStockData: function(symbol, callback) {
-            _executeDBOperation('readonly', 'get', { symbol: symbol }, 
-                function(err, result) {
-                    callback(err, result ? result.data : null);
-                }
-            );
-        },
-
-        // 删除数据
-        deleteStockData: function(symbol, callback) {
-            _executeDBOperation('readwrite', 'delete', { symbol: symbol }, callback);
-        },
-
-        // 获取所有股票代码
-        getAllSymbols: function(callback) {
-            _executeDBOperation('readonly', 'getAll', {}, 
-                function(err, results) {
-                    if (err) {
-                        callback(err, null);
-                        return;
-                    }
-                    var symbols = results.map(function(item) {
-                        return { 
-                            symbol: item.symbol, 
-                            type: item.type 
-                        };
-                    });
-                    callback(null, symbols);
-                }
-            );
-        },
-
-        // 清理过期数据
-        cleanupOldData: function(maxAgeDays, callback) {
-            var cutoff = new Date();
-            cutoff.setDate(cutoff.getDate() - (maxAgeDays || 30));
-            
-            _executeDBOperation('readonly', 'getAll', {}, 
-                function(err, results) {
-                    if (err) {
-                        callback(err, 0);
-                        return;
-                    }
-
-                    var oldItems = results.filter(function(item) {
-                        return new Date(item.lastUpdated) < cutoff;
-                    });
-
-                    if (oldItems.length === 0) {
-                        callback(null, 0);
-                        return;
-                    }
-
-                    var deleteCount = 0;
-                    oldItems.forEach(function(item) {
-                        this.deleteStockData(item.symbol, function(err) {
-                            if (!err) deleteCount++;
-                        });
-                    }.bind(this));
-
-                    callback(null, deleteCount);
-                }.bind(this)
-            );
-        },
-
-        // 导出所有数据
-        exportAllData: function(callback) {
-            _executeDBOperation('readonly', 'getAll', {}, 
-                function(err, results) {
-                    callback(err, JSON.stringify(results || [], null, 2));
-                }
-            );
-        },
-
-        // 导入数据
-        importData: function(jsonStr, callback) {
-            try {
-                var data = JSON.parse(jsonStr);
-                if (!Array.isArray(data)) {
-                    throw new Error('Invalid data format');
-                }
-
-                var successCount = 0;
-                data.forEach(function(item) {
-                    this.saveStockData(item.symbol, item.data, item.type, 
-                        function(err) {
-                            if (!err) successCount++;
-                        }
-                    );
-                }.bind(this));
-
-                callback(null, successCount);
-            } catch (err) {
-                callback(err, 0);
+        /**
+         * 获取格式化后的时间序列数据
+         * @param {string} symbol - 股票代码
+         * @returns {Promise<Array>}
+         */
+        async getFormattedStockData(symbol) {
+            const dbData = await this.loadStockData(symbol);
+            if (!dbData || !dbData.data) {
+                throw new Error('No data available');
             }
+
+            // 数据格式兼容处理
+            let seriesData;
+            if (Array.isArray(dbData.data)) {
+                seriesData = dbData.data;  // 格式1: 直接数组
+            } else if (dbData.data.history) {
+                seriesData = dbData.data.history;  // 格式2: 包含history字段
+            } else if (dbData.data['Time Series (Daily)']) {
+                // 格式3: 原始API格式
+                seriesData = Object.entries(dbData.data['Time Series (Daily)']).map(([date, values]) => ({
+                    date,
+                    open: values['1. open'],
+                    high: values['2. high'],
+                    low: values['3. low'],
+                    close: values['4. close'],
+                    volume: values['6. volume']
+                }));
+            } else {
+                seriesData = dbData.data;  // 最后尝试直接使用
+            }
+
+            // 统一格式化
+            return seriesData.map(item => ({
+                date: item.date ? new Date(item.date) : new Date(),
+                open: parseFloat(item.open) || 0,
+                high: parseFloat(item.high) || 0,
+                low: parseFloat(item.low) || 0,
+                close: parseFloat(item.close) || 0,
+                volume: parseInt(item.volume) || 0
+            })).sort((a, b) => a.date - b.date);
+        },
+
+        /**
+         * 获取所有股票代码
+         * @returns {Promise<Array>}
+         */
+        async getAllSymbols() {
+            const allData = await _executeTransaction('readonly', 'getAll');
+            return allData.map(item => ({
+                symbol: item.symbol,
+                type: item.type,
+                lastUpdated: item.lastUpdated
+            }));
         }
     };
 })();
