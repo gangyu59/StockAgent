@@ -1,14 +1,11 @@
-// scripts/dataStorage.js
 var StockDB = (function() {
-    // 数据库配置
     const DB_CONFIG = {
-        name: 'StockDataDB_v2',  // 新数据库名避免冲突
+        name: 'StockDataDB_v2',
         version: 1,
         storeName: 'stock_data',
         keyPath: 'symbol'
     };
 
-    // 私有方法：初始化数据库连接
     function _getDatabase() {
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_CONFIG.name, DB_CONFIG.version);
@@ -35,131 +32,105 @@ var StockDB = (function() {
         });
     }
 
-    // 私有方法：执行数据库事务
-		async function _executeTransaction(mode, operation, data) {
-		    let db;
-		    try {
-		        // 1. 获取数据库连接（保持原有）
-		        db = await _getDatabase();
-		        
-		        return new Promise((resolve, reject) => {
-		            // 2. 添加事务错误监听（新增）
-		            const tx = db.transaction(DB_CONFIG.storeName, mode);
-		            tx.onerror = (event) => {
-		                console.error('[DB] 事务失败:', event.target.error);
-		                db.close(); // 确保关闭连接
-		                reject(event.target.error);
-		            };
-		
-		            const store = tx.objectStore(DB_CONFIG.storeName);
-		            
-		            // 3. 操作分发（保持您的原有逻辑）
-		            let request;
-		            switch (operation) {
-		                case 'put': request = store.put(data); break;
-		                case 'get': request = store.get(data); break;
-		                case 'delete': request = store.delete(data); break;
-		                case 'getAll': request = store.getAll(); break;
-		                default: 
-		                    db.close();
-		                    return reject(new Error(`无效操作: ${operation}`));
-		            }
-		
-		            request.onsuccess = () => {
-		                if (operation === 'get' || operation === 'getAll') {
-		                    console.log('[DB] 操作成功:', { 
-		                        operation,
-		                        dataSize: Array.isArray(request.result) 
-		                            ? request.result.length 
-		                            : 1
-		                    });
-		                }
-		                db.close(); // 成功时关闭连接
-		                resolve(request.result);
-		            };
-		            
-		            request.onerror = (event) => {
-		                console.error('[DB] 操作失败:', {
-		                    operation,
-		                    error: event.target.error,
-		                    data: operation === 'put' ? data : null
-		                });
-		                db.close(); // 失败时关闭连接
-		                reject(event.target.error);
-		            };
-		        });
-		    } catch (err) {
-		        // 4. 全局错误处理（新增）
-		        if (db) db.close();
-		        console.error('[DB] 执行事务异常:', err);
-		        throw err;
-		    }
-		}
+    async function _executeTransaction(mode, operation, data) {
+        let db;
+        try {
+            db = await _getDatabase();
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction(DB_CONFIG.storeName, mode);
+                tx.onerror = (event) => {
+                    console.error('[DB] 事务失败:', event.target.error);
+                    db.close();
+                    reject(event.target.error);
+                };
+
+                const store = tx.objectStore(DB_CONFIG.storeName);
+                let request;
+                switch (operation) {
+                    case 'put': request = store.put(data); break;
+                    case 'get': request = store.get(data); break;
+                    case 'delete': request = store.delete(data); break;
+                    case 'getAll': request = store.getAll(); break;
+                    default:
+                        db.close();
+                        return reject(new Error(`无效操作: ${operation}`));
+                }
+
+                request.onsuccess = () => {
+                    db.close();
+                    resolve(request.result);
+                };
+
+                request.onerror = (event) => {
+                    console.error('[DB] 操作失败:', event.target.error);
+                    db.close();
+                    reject(event.target.error);
+                };
+            });
+        } catch (err) {
+            if (db) db.close();
+            console.error('[DB] 执行事务异常:', err);
+            throw err;
+        }
+    }
 
     return {
-        /**
-         * 保存股票数据
-         * @param {string} symbol - 股票代码
-         * @param {object} data - 要保存的数据
-         * @param {string} type - 数据类型
-         * @returns {Promise<void>}
-         */
-        async saveStockData(symbol, data, type = 'daily') {
+				async saveStockData(symbol, data, type = 'daily') {
 				    try {
+				        const upperSymbol = symbol.toUpperCase();
+				        const formattedSymbol = `${upperSymbol}_TIME_SERIES`;
+				
 				        const record = {
-				            symbol: symbol.toUpperCase(),
+				            symbol: formattedSymbol,
 				            data: data,
 				            type: type,
 				            lastUpdated: new Date().toISOString()
 				        };
 				
-				        console.log('[DB] 准备保存记录:', {  // 调试日志
-				            symbol: symbol,
+				        console.log('[DB] 准备保存记录:', {
+				            symbol: formattedSymbol,
 				            dataLength: Array.isArray(data?.history) ? data.history.length : 'unknown',
 				            type: type
 				        });
 				
 				        await _executeTransaction('readwrite', 'put', record);
-				        console.log('[DB] 保存成功:', symbol);  // 成功日志
+				        console.log('[DB] 保存成功:', formattedSymbol);
 				    } catch (error) {
-				        console.error('[DB] 保存失败:', {  // 详细错误日志
-				            symbol: symbol,
-				            error: error,
-				            errorStack: error.stack,
-				            time: new Date().toISOString()
-				        });
-				        throw error;  // 保持原有错误抛出
+				        console.error('[DB] 保存失败:', error);
+				        throw error;
 				    }
 				},
+				
+				async loadStockData(symbol, type = 'TIME_SERIES') {
+				    const upperSymbol = symbol.toUpperCase();
+				    const allData = await _executeTransaction('readonly', 'getAll');
+				
+				    const matched = allData.find(item => {
+				        const matchSymbol = item.symbol?.toUpperCase().includes(upperSymbol);
+				        const matchType = item.type?.toUpperCase().includes(type.toUpperCase()) || item.symbol?.includes('TIME_SERIES');
+				        return matchSymbol && matchType;
+				    });
+				
+				    console.log(`[DEBUG] 查询请求: ${symbol}, 匹配结果: ${matched?.symbol || 'null'}`);
+				    return matched || null;
+				},
 
-        /**
-         * 加载股票数据
-         * @param {string} symbol - 股票代码
-         * @returns {Promise<object|null>}
-         */
-        async loadStockData(symbol) {
-            return await _executeTransaction('readonly', 'get', symbol.toUpperCase());
-        },
-
-        /**
-         * 获取格式化后的时间序列数据
-         * @param {string} symbol - 股票代码
-         * @returns {Promise<Array>}
-         */
         async getFormattedStockData(symbol) {
-            const dbData = await this.loadStockData(symbol);
+            const dbData = await this.loadStockData(symbol, 'TIME_SERIES');
             if (!dbData || !dbData.data) {
-                throw new Error('No data available');
+                throw new Error(`未找到 ${symbol} 的时间序列数据`);
             }
 
-            // 数据格式兼容处理
             let seriesData;
+
             if (Array.isArray(dbData.data)) {
-                seriesData = dbData.data;  // 格式1: 直接数组
+                console.log("✅ 使用直接数组格式");
+                seriesData = dbData.data;
             } else if (dbData.data.history) {
-                seriesData = dbData.data.history;  // 格式2: 包含history字段
+                console.log("✅ 使用 history 字段格式");
+                seriesData = dbData.data.history;
             } else if (dbData.data['Time Series (Daily)']) {
-                // 格式3: 原始API格式
+                console.log("✅ 使用原始 API 格式");
                 seriesData = Object.entries(dbData.data['Time Series (Daily)']).map(([date, values]) => ({
                     date,
                     open: values['1. open'],
@@ -169,31 +140,54 @@ var StockDB = (function() {
                     volume: values['6. volume']
                 }));
             } else {
-                seriesData = dbData.data;  // 最后尝试直接使用
+                console.warn("⚠️ 未知格式，尝试使用兜底数据结构");
+                seriesData = dbData.data;
             }
 
-            // 统一格式化
-            return seriesData.map(item => ({
-                date: item.date ? new Date(item.date) : new Date(),
-                open: parseFloat(item.open) || 0,
-                high: parseFloat(item.high) || 0,
-                low: parseFloat(item.low) || 0,
-                close: parseFloat(item.close) || 0,
-                volume: parseInt(item.volume) || 0
-            })).sort((a, b) => a.date - b.date);
-        },
+            if (!Array.isArray(seriesData)) {
+                const actualType = typeof seriesData;
+                console.error(`[格式错误] seriesData 类型应为 Array，实际为: ${actualType}`, seriesData);
+                throw new Error(`数据格式错误：${symbol} 的时间序列不是数组类型`);
+            }
 
-        /**
-         * 获取所有股票代码
-         * @returns {Promise<Array>}
-         */
-        async getAllSymbols() {
-            const allData = await _executeTransaction('readonly', 'getAll');
-            return allData.map(item => ({
-                symbol: item.symbol,
-                type: item.type,
-                lastUpdated: item.lastUpdated
-            }));
+            const formattedData = seriesData.map(item => {
+                console.log("Processing item:", {
+                    rawDate: item.date,
+                    rawOpen: item.open,
+                    rawType: typeof item.open
+                });
+
+                const result = {
+                    date: item.date ? new Date(item.date) : new Date(),
+                    open: convertToNumber(item.open),
+                    high: convertToNumber(item.high),
+                    low: convertToNumber(item.low),
+                    close: convertToNumber(item.close),
+                    volume: convertToNumber(item.volume)
+                };
+
+                if (isNaN(result.open)) {
+                    console.warn("数值转换警告:", {
+                        symbol,
+                        rawValue: item.open,
+                        converted: result.open
+                    });
+                }
+
+                return result;
+            }).sort((a, b) => a.date - b.date);
+
+            console.log("格式化完成，样本数据:", formattedData.slice(0, 3));
+            return formattedData;
+
+            function convertToNumber(value) {
+                if (typeof value === 'number') return value;
+                if (typeof value === 'string') {
+                    const cleaned = value.replace(/[^\d.-]/g, '');
+                    return parseFloat(cleaned) || 0;
+                }
+                return 0;
+            }
         }
     };
 })();

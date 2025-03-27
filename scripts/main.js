@@ -88,23 +88,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // 初始化图表
     window.chartRenderer.initChart();
     
-    // 修改阅读报告按钮事件
+		// 修改后的read-report事件处理
 		document.getElementById('read-report').addEventListener('click', async function() {
 		    const stockCode = window.stockManager.getStockCode();
 		    const debugEl = document.getElementById('debug-area');
 		    debugEl.innerHTML = `正在获取 ${stockCode} 数据...`;
 		    
 		    try {
-		        const data = await window.stockManager.fetchStockData(stockCode);
-		        debugEl.innerHTML += `<br>获取到 ${data?.length || 0} 条数据`;
+		        console.group('=== 开始数据获取流程 ===');
+	//	        console.log('1. 正在从数据库加载原始数据...', stockCode);
 		        
-		        if (data?.length) {
-		            window.chartRenderer.updateChart(stockCode, data);
-		        } else {
-		            debugEl.innerHTML += `<br>错误：数据为空`;
+		        // 第一步：直接从数据库加载原始数据
+		        const dbData = await StockDB.loadStockData(stockCode);
+	//	        console.log('2. 数据库返回的原始数据:', dbData;
+		        
+		        if (!dbData) {
+		            throw new Error('数据库中没有找到该股票的数据');
 		        }
+		
+	//	        console.log('3. 正在格式化数据...');
+		        const formattedData = await StockDB.getFormattedStockData(stockCode);
+		        console.log('4. 格式化后的数据样本:', formattedData.slice(0, 3)); // 显示前3条
+		        
+		        debugEl.innerHTML += `<br>获取到 ${formattedData.length} 条数据`;
+		        
+		        if (formattedData && formattedData.length) {
+	//	            console.log('5. 准备绘制图表...');
+		            window.chartRenderer.updateChart(stockCode, formattedData);
+	//	            console.log('6. 图表更新完成');
+		        } else {
+		            const msg = '错误：格式化后数据为空';
+		            console.error(msg);
+		            debugEl.innerHTML += `<br>${msg}`;
+		            window.chartRenderer.showError(msg);
+		        }
+		        
+		        console.groupEnd();
 		    } catch (error) {
+		        console.error('完整错误堆栈:', error);
+		        console.log('当前数据库状态:', await StockDB.getAllSymbols());
+		        
 		        debugEl.innerHTML += `<br>发生错误: ${error.message}`;
+		        window.chartRenderer.showError(`数据加载失败: ${error.message}`);
 		    }
 		});
 });

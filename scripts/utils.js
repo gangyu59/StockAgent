@@ -43,3 +43,21 @@ function clearDatabase() {
         };
     });
 }
+
+// 极简调试工具
+const debug = {
+  log: (msg) => {
+    // 方法1: alert弹窗（适合短信息）
+    alert(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    
+    // 方法2: 页面顶部显示（适合长信息）
+    const debugDiv = document.getElementById('debug-alert') || (() => {
+      const div = document.createElement('div');
+      div.id = 'debug-alert';
+      div.style = 'position:fixed; top:0; left:0; background:red; color:white; z-index:99999; padding:10px;';
+      document.body.prepend(div);
+      return div;
+    })();
+    debugDiv.innerHTML += `<div>${typeof msg === 'string' ? msg : JSON.stringify(msg)}</div>`;
+  }
+};
