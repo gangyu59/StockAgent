@@ -52,12 +52,26 @@ window.stockManager = {
             : '';
 
         // 显示所有股票
-        expandedList.innerHTML = stockList.map(stock => `
-            <li data-symbol="${escapeHTML(stock)}">
-                ${escapeHTML(stock)}
-                <button class="delete-stock">×</button>
-            </li>
-        `).join('');
+				expandedList.innerHTML = stockList.map(stock => `
+				    <li class="stock-item" data-symbol="${escapeHTML(stock)}">
+				        ${escapeHTML(stock)}
+				        <button class="delete-stock">×</button>
+				    </li>
+				`).join('');
+				
+				// 添加点击事件：点击股票 → 显示在输入框
+				Array.from(expandedList.querySelectorAll('li.stock-item')).forEach(li => {
+				    li.addEventListener('click', (e) => {
+				        // 如果点击的是删除按钮就跳过
+				        if (e.target.classList.contains('delete-stock')) return;
+				
+				        const symbol = li.dataset.symbol;
+				        const inputEl = document.getElementById('stock-code');
+				        if (inputEl && symbol) {
+				            inputEl.value = symbol;
+				        }
+				    });
+				});
     },
 
     // 添加股票到清单
