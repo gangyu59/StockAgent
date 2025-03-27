@@ -29,10 +29,10 @@ async function fetchStockNews(symbol, limit = 10) {
         return [];
     }
 }
-
+		
 // 展示新闻列表
 function displayNewsList(newsList, symbol) {
-    const outputElement = document.getElementById('output-content');
+    const outputElement = document.getElementById('news-tab');
     if (!outputElement) return;
 
     // 清空输出框

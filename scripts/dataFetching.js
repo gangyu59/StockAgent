@@ -102,15 +102,13 @@ function saveDataToDB(data, symbol, callback) {
     };
 }
 
-// 展示股票基础信息
 function displayStockOverview(data) {
-    const outputElement = document.getElementById('output-content');
+    const outputElement = document.getElementById('overview-tab');
     if (!outputElement) return;
 
-    // 清空输出框
+    // 清空当前页（不影响其他 tab）
     outputElement.innerHTML = '';
 
-    // 创建展示内容
     const overviewHTML = `
         <div class="section">
             <div class="section-title">公司概况</div>
@@ -140,7 +138,6 @@ function displayStockOverview(data) {
         </div>
     `;
 
-    // 插入到输出框
     outputElement.innerHTML = overviewHTML;
 }
 

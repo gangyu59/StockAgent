@@ -145,3 +145,19 @@ function generateStockReport(data) {
     console.log('Generating report for:', data);
     // 生成研究报告
 }
+
+//切换tab
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    // 激活按钮
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    // 激活内容页
+    const targetId = btn.getAttribute('data-tab');
+    document.querySelectorAll('.tab-content').forEach(tab => {
+      tab.classList.remove('active');
+    });
+    document.getElementById(targetId).classList.add('active');
+  });
+});
