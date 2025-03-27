@@ -9,8 +9,14 @@
     <link rel="stylesheet" href="styles/components.css">
     <link rel="stylesheet" href="styles/features.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial"></script>
+
+		<!-- 引入Chart.js核心 -->
+		<script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+		<!-- 引入date-fns日期库 -->
+		<script src="https://cdn.jsdelivr.net/npm/date-fns@3.0.0/dist/date-fns.min.js"></script>
+		<!-- 引入日期适配器 -->
+		<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.min.js"></script>
 </head>
 <body>
     <div id="container">
@@ -48,9 +54,8 @@
             </div>
 
             <!-- 图表展示区 -->
-            <div id="chart-area">
-                <canvas id="stock-chart"></canvas>
-            </div>
+						<div id="chart-container" style="width: 100%; height: 400px; margin-top: 20px;"></div>
+						
 						<!-- 在chart-area下方添加 -->
 						<div id="debug-area" style="color:red; padding:10px; font-family:monospace;"></div>
         </div>
@@ -67,9 +72,9 @@
     <script src="apis/ark.js"></script>
     <script src="apis/dalle.js"></script>
     <script src="apis/claude.js"></script>
-		<script src="scripts/chartRenderer.js"></script>
 		<script src="scripts/dataStorage.js"></script>
     <script src="scripts/stockManager.js"></script>
+		<script src="scripts/chartRenderer.js"></script>
     <script src="scripts/dataFetching.js"></script>
     <script src="scripts/newsSearch.js"></script>
     <script src="scripts/aiAnalysis.js"></script>
