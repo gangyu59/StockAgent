@@ -62,14 +62,19 @@ const debug = {
   }
 };
 
+// tab 切换函数
 function switchToTab(tabId) {
-    // 高亮 tab 按钮
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabId);
     });
-
-    // 显示对应 tab 内容
     document.querySelectorAll('.tab-content').forEach(tab => {
         tab.classList.toggle('active', tab.id === tabId);
     });
-};
+
+    // 如果是切换到图表 tab，并且 chartRenderer 已加载
+    if (tabId === 'chart-tab' && window.chartRenderer?.resizeChart) {
+        setTimeout(() => {
+            window.chartRenderer.resizeChart();
+        }, 50); // 延迟执行，确保 tab 已完全显示
+    }
+}
