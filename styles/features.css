@@ -188,24 +188,46 @@
 
 #tab-bar {
   display: flex;
-  gap: 10px;
-  margin-bottom: 0px;
-	margin-top: 10px;
+  gap: 4px; /* 更紧凑 */
+  margin-top: 10px;
+  margin-bottom: 0;
 }
 
+/* 基础 tab 样式 */
 .tab-btn {
-  padding: 6px 8px;
-  border: none;
-  background-color: #ccc;
-  cursor: pointer;
-  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 14px;
   font-weight: bold;
-  color: #333;
+  color: #555;
+  background-color: #e0e0e0;
+  border: 1px solid #bbb;
+  border-bottom: none;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  cursor: pointer;
+  position: relative;
+  top: 2px; /* 为了与内容区域视觉对齐 */
+  z-index: 1;
+  transition: all 0.2s ease;
 }
 
+/* 激活 tab 的样式 */
 .tab-btn.active {
-  background-color: #facc15; /* 黄色 */
+  background-color: #fff;
   color: #000;
+  border-bottom: 1px solid white; /* 与内容区衔接 */
+  z-index: 10;
+  box-shadow: 0 -2px 5px rgba(0,0,0,0.1); /* 有轻微浮起感 */
+}
+
+/* tab 内容区保持边框 */
+.tab-content {
+  border: 1px solid #bbb;
+  border-top: none;
+  padding: 16px;
+  background-color: #fff;
 }
 
 .tab-content {
@@ -225,4 +247,30 @@
 
 .section:first-child {
   border-top: none;
+}
+
+.ai-report-wrapper {
+  font-family: "Helvetica Neue", sans-serif;
+  line-height: 1.7;
+  padding: 15px;
+  color: #222;
+}
+
+.ai-report-wrapper h1, .ai-report-wrapper h2, .ai-report-wrapper h3 {
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+  margin-top: 20px;
+  color: #1a237e;
+}
+
+.ai-report-wrapper h1 {
+  font-size: 22px;
+}
+
+.ai-report-wrapper h2 {
+  font-size: 18px;
+}
+
+.ai-report-wrapper h3 {
+  font-size: 16px;
 }
