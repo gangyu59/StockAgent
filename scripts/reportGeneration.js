@@ -1,18 +1,24 @@
-function generateStockReport(data) {
-    const outputElement = document.getElementById('output-content');
-    const { stockCode, news, analysis } = data;
+window.reportGenerator = (function () {
+    function renderAIReport(text) {
+        const container = document.getElementById('ai-tab');
+        if (!container) return;
 
-    let report = `<h2>${stockCode} 研究报告</h2>`;
-    report += `<p><strong>公司概况：</strong>${analysis?.companyOverview || '暂无数据'}</p>`;
-    report += `<p><strong>财务分析：</strong>${analysis?.financialAnalysis || '暂无数据'}</p>`;
-    report += `<p><strong>估值分析：</strong>${analysis?.valuationAnalysis || '暂无数据'}</p>`;
-    report += `<p><strong>风险分析：</strong>${analysis?.riskAnalysis || '暂无数据'}</p>`;
-    report += `<p><strong>投资建议：</strong>${analysis?.investmentRecommendation || '暂无数据'}</p>`;
+        // Markdown 转换为 HTML（简单处理）
+        const html = text
+            .replace(/^# (.*)$/gm, '<h1>$1</h1>')
+            .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+            .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+            .replace(/\n{2,}/g, '<br><br>')   // 段落空行
+            .replace(/\n/g, '<br>');         // 保留换行
 
-    if (news) {
-        report += `<h3>新闻汇总</h3>`;
-        report += news.map(article => `<p><a href="${article.url}" target="_blank">${article.title}</a></p>`).join('');
+        container.innerHTML = `
+            <div class="ai-report-wrapper">
+                ${html}
+            </div>
+        `;
     }
 
-    outputElement.innerHTML = report;
-}
+    return {
+        renderAIReport
+    };
+})();

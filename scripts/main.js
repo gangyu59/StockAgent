@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // AI 推选
-    document.getElementById('ai-recommend').addEventListener('click', () => {
+    document.getElementById('ai-analysis').addEventListener('click', () => {
         const stockCode = window.stockManager.getSelectedStocks();
         if (stockCode) {
             analyzeStockWithAI(stockCode);
@@ -135,11 +135,32 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
+document.getElementById('ai-analysis').addEventListener('click', async function () {
+    const stockCode = window.stockManager.getStockCode();
+    const debugEl = document.getElementById('debug-area');
+    debugEl.innerHTML = `正在生成 ${stockCode} 的 AI 分析报告...`;
+		
+		toggleHourglass(true);
 
-function analyzeStockWithAI(stockCodes) {
-    console.log('Analyzing stocks with AI:', stockCodes);
-    // 调用 AI API 进行分析
-}
+    try {
+        // 切换到 AI 分析 tab
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === 'ai-tab');
+        });
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.toggle('active', tab.id === 'ai-tab');
+        });
+
+        const result = await window.aiAnalysis.analyze(stockCode);
+        window.reportGenerator.renderAIReport(result);
+        debugEl.innerHTML += `<br>报告生成完成`;
+    } catch (err) {
+        console.error('[AI 分析失败]', err);
+        debugEl.innerHTML += `<br>发生错误: ${err.message || '未知错误'}`;
+        document.getElementById('ai-tab').innerHTML = `<div style="color: red;">AI 分析失败：${err.message}</div>`;
+    }
+		toggleHourglass(false);
+});
 
 function generateStockReport(data) {
     console.log('Generating report for:', data);
