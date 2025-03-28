@@ -1,4 +1,4 @@
-var StockDB = (function() {
+var StockDB = (function () {
     const DB_CONFIG = {
         name: 'StockDataDB_v2',
         version: 1,
@@ -74,46 +74,40 @@ var StockDB = (function() {
         }
     }
 
+    function _formatKey(symbol, type) {
+        const upperSymbol = symbol.toUpperCase();
+        const suffix = type.toUpperCase().includes('OVERVIEW') ? 'OVERVIEW' : 'TIME_SERIES';
+        return `${upperSymbol}_${suffix}`;
+    }
+
     return {
-				async saveStockData(symbol, data, type = 'daily') {
-				    try {
-				        const upperSymbol = symbol.toUpperCase();
-				        const formattedSymbol = `${upperSymbol}_TIME_SERIES`;
-				
-				        const record = {
-				            symbol: formattedSymbol,
-				            data: data,
-				            type: type,
-				            lastUpdated: new Date().toISOString()
-				        };
-				
-				        console.log('[DB] 准备保存记录:', {
-				            symbol: formattedSymbol,
-				            dataLength: Array.isArray(data?.history) ? data.history.length : 'unknown',
-				            type: type
-				        });
-				
-				        await _executeTransaction('readwrite', 'put', record);
-				        console.log('[DB] 保存成功:', formattedSymbol);
-				    } catch (error) {
-				        console.error('[DB] 保存失败:', error);
-				        throw error;
-				    }
-				},
-				
-				async loadStockData(symbol, type = 'TIME_SERIES') {
-				    const upperSymbol = symbol.toUpperCase();
-				    const allData = await _executeTransaction('readonly', 'getAll');
-				
-				    const matched = allData.find(item => {
-				        const matchSymbol = item.symbol?.toUpperCase().includes(upperSymbol);
-				        const matchType = item.type?.toUpperCase().includes(type.toUpperCase()) || item.symbol?.includes('TIME_SERIES');
-				        return matchSymbol && matchType;
-				    });
-				
-				    console.log(`[DEBUG] 查询请求: ${symbol}, 匹配结果: ${matched?.symbol || 'null'}`);
-				    return matched || null;
-				},
+        async saveStockData(symbol, data, type = 'daily') {
+            try {
+                const formattedSymbol = _formatKey(symbol, type);
+                await _executeTransaction('readwrite', 'delete', formattedSymbol); // 删除旧数据
+
+                const record = {
+                    symbol: formattedSymbol,
+                    data: data,
+                    type: type,
+                    lastUpdated: new Date().toISOString()
+                };
+
+      //          console.log('[DB] 保存记录:', record);
+                await _executeTransaction('readwrite', 'put', record);
+                console.log('[DB] 保存成功:', formattedSymbol);
+            } catch (error) {
+                console.error('[DB] 保存失败:', error);
+                throw error;
+            }
+        },
+
+        async loadStockData(symbol, type = 'TIME_SERIES') {
+            const formattedSymbol = _formatKey(symbol, type);
+            const result = await _executeTransaction('readonly', 'get', formattedSymbol);
+            console.log(`[DEBUG] 查询请求: ${symbol}, Key: ${formattedSymbol}, 命中: ${result ? '是' : '否'}`);
+            return result || null;
+        },
 
         async getFormattedStockData(symbol) {
             const dbData = await this.loadStockData(symbol, 'TIME_SERIES');
@@ -145,53 +139,23 @@ var StockDB = (function() {
             }
 
             if (!Array.isArray(seriesData)) {
-                const actualType = typeof seriesData;
-                console.error(`[格式错误] seriesData 类型应为 Array，实际为: ${actualType}`, seriesData);
                 throw new Error(`数据格式错误：${symbol} 的时间序列不是数组类型`);
             }
 
-            const formattedData = seriesData.map(item => {
-                console.log("Processing item:", {
-                    rawDate: item.date,
-                    rawOpen: item.open,
-                    rawType: typeof item.open
-                });
+            const formattedData = seriesData.map(item => ({
+                date: item.date ? new Date(item.date) : new Date(),
+                open: parseFloat(item.open) || 0,
+                high: parseFloat(item.high) || 0,
+                low: parseFloat(item.low) || 0,
+                close: parseFloat(item.close) || 0,
+                volume: parseInt(item.volume) || 0
+            })).sort((a, b) => a.date - b.date);
 
-                const result = {
-                    date: item.date ? new Date(item.date) : new Date(),
-                    open: convertToNumber(item.open),
-                    high: convertToNumber(item.high),
-                    low: convertToNumber(item.low),
-                    close: convertToNumber(item.close),
-                    volume: convertToNumber(item.volume)
-                };
-
-                if (isNaN(result.open)) {
-                    console.warn("数值转换警告:", {
-                        symbol,
-                        rawValue: item.open,
-                        converted: result.open
-                    });
-                }
-
-                return result;
-            }).sort((a, b) => a.date - b.date);
-
-            console.log("格式化完成，样本数据:", formattedData.slice(0, 3));
+  //          console.log("格式化完成，样本数据:", formattedData.slice(0, 3));
             return formattedData;
-
-            function convertToNumber(value) {
-                if (typeof value === 'number') return value;
-                if (typeof value === 'string') {
-                    const cleaned = value.replace(/[^\d.-]/g, '');
-                    return parseFloat(cleaned) || 0;
-                }
-                return 0;
-            }
         }
     };
 })();
-
 
 //下面是维护感兴趣的股票清单的函数
 function saveStockList(stockList) {

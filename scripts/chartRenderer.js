@@ -10,8 +10,8 @@ window.chartRenderer = (function() {
 				        return;
 				    }
 				
-				    console.log('[chartRenderer] initChart 被调用');
-				    console.log('chart container 宽度:', container.clientWidth);
+	//			    console.log('[chartRenderer] initChart 被调用');
+	//			    console.log('chart container 宽度:', container.clientWidth);
 				
 				    container.innerHTML = ''; // 清空旧图
 				
@@ -48,7 +48,7 @@ window.chartRenderer = (function() {
 				            chart.resize(container.clientWidth, container.clientHeight);
 				        });
 				
-				        console.log('[chartRenderer] 图表已初始化');
+		//		        console.log('[chartRenderer] 图表已初始化');
 				    }, 100);
 				},
 				

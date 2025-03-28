@@ -61,3 +61,15 @@ const debug = {
     debugDiv.innerHTML += `<div>${typeof msg === 'string' ? msg : JSON.stringify(msg)}</div>`;
   }
 };
+
+function switchToTab(tabId) {
+    // 高亮 tab 按钮
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabId);
+    });
+
+    // 显示对应 tab 内容
+    document.querySelectorAll('.tab-content').forEach(tab => {
+        tab.classList.toggle('active', tab.id === tabId);
+    });
+};

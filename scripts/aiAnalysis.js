@@ -33,8 +33,8 @@ window.aiAnalysis = (function() {
             { role: 'user', content: userPrompt }
         ];
 
-        const response = await callGPT(messages, {
-            testType: 'gpt',       // 非多模态
+        const response = await callDeepSeek(messages, {
+            testType: 'deepseek',       // 非多模态
             max_tokens: 2000,      // 增加 token 保证内容完整
             temperature: 0.7       // 可调节语气
         });

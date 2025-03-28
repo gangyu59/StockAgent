@@ -44,64 +44,6 @@ async function fetchStockTimeSeries(stockCode) {
     }
 }
 
-/**
- * 将数据保存到IndexedDB
- * @param {Object} data - 要保存的股票数据
- * @param {string} symbol - 股票代码（替代原filename参数）
- * @param {function} [callback] - 可选回调函数(err)
- */
-// saveDataToDB 函数
-function saveDataToDB(data, symbol, callback) {
-    // 强制验证输入
-    if (!symbol || typeof symbol !== 'string') {
-        return callback(new Error('股票代码必须是字符串'));
-    }
-    if (!Array.isArray(data)) {
-        return callback(new Error('数据必须是数组'));
-    }
-
-    const dbName = 'StockDataDB';
-    const dbVersion = 1; // 固定版本号
-    
-    const request = indexedDB.open(dbName, dbVersion);
-    
-    request.onerror = (e) => callback(e.target.error);
-    
-    request.onupgradeneeded = (e) => {
-        const db = e.target.result;
-        if (!db.objectStoreNames.contains('stock_data')) {
-            const store = db.createObjectStore('stock_data', {
-                keyPath: 'symbol'
-            });
-            store.createIndex('by_symbol', 'symbol', { unique: true });
-        }
-    };
-    
-    request.onsuccess = (e) => {
-        const db = e.target.result;
-        const tx = db.transaction('stock_data', 'readwrite');
-        const store = tx.objectStore('stock_data');
-        
-        const record = {
-            symbol: symbol,
-            data: { history: data },
-            lastUpdated: new Date().toISOString()
-        };
-        
-        const req = store.put(record);
-        
-        req.onsuccess = () => {
-            db.close();
-            callback(null);
-        };
-        
-        req.onerror = (e) => {
-            db.close();
-            callback(e.target.error);
-        };
-    };
-}
-
 function displayStockOverview(data) {
     const outputElement = document.getElementById('overview-tab');
     if (!outputElement) return;
@@ -146,38 +88,37 @@ async function fetchStockData(stockCode) {
     try {
         // 1. 获取时间序列数据
         const timeSeriesData = await fetchStockTimeSeries(stockCode);
-        console.log('获取到时间序列数据:', timeSeriesData);
-        
-        // 2. 保存时间序列数据（仅添加超时清理）
+//        console.log('获取到时间序列数据:', timeSeriesData);
+
+        // 2. 保存时间序列数据（使用统一 API）
         if (timeSeriesData) {
-            let timeout; // 声明在外部以便清理
             try {
-                await new Promise((resolve, reject) => {
-                    timeout = setTimeout(() => {
-                        reject(new Error('数据库操作超时 (3秒)'));
-                    }, 3000);
-                    
-                    saveDataToDB(timeSeriesData, `${stockCode}_time_series`, (err) => {
-                        clearTimeout(timeout); // 关键修复点
-                        err ? reject(err) : resolve();
-                    });
-                });
+                await Promise.race([
+                    StockDB.saveStockData(stockCode, timeSeriesData, 'TIME_SERIES'),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('数据库操作超时 (3秒)')), 3000))
+                ]);
             } catch (err) {
-                console.error('保存异常:', err.message);
-                // 不阻断流程
+                console.error('保存时间序列失败:', err.message);
             }
         }
 
         // 3. 获取基础信息
         const overviewData = await fetchStockOverview(stockCode);
-        
+
         // 4. 显示基础信息
         if (overviewData) {
             displayStockOverview(overviewData);
+
+            // 同步存入 overview（推荐）
+            try {
+                await StockDB.saveStockData(stockCode, overviewData, 'OVERVIEW');
+            } catch (err) {
+                console.error('保存overview失败:', err.message);
+            }
         }
     } catch (error) {
         console.error('主流程错误:', error);
-        document.getElementById('output-content').innerHTML = 
+        document.getElementById('output-content').innerHTML =
             `<div class="error">${stockCode} 数据获取失败: ${error.message}</div>`;
     } finally {
         toggleHourglass(false);

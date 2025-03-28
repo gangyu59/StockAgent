@@ -59,6 +59,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('fetch-data').addEventListener('click', () => {
         const stockCode = window.stockManager.getStockCode();
         if (stockCode) {
+					  // 切换到基础信息 tab
+			      switchToTab('overview-tab');
+							
             fetchStockData(stockCode);
         } else {
             showMessage('请输入有效的股票代码（1-5个字母）');
@@ -69,17 +72,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('search-news').addEventListener('click', () => {
         const stockCode = window.stockManager.getStockCode();
         if (stockCode) {
+					   	// 切换到新闻 tab
+			        switchToTab('news-tab');
             window.newsSearch.searchStockNews(stockCode);
-        } else {
-            showMessage('请输入有效的股票代码（1-5个字母）');
-        }
-    });
-
-    // AI 推选
-    document.getElementById('ai-analysis').addEventListener('click', () => {
-        const stockCode = window.stockManager.getSelectedStocks();
-        if (stockCode) {
-            analyzeStockWithAI(stockCode);
         } else {
             showMessage('请输入有效的股票代码（1-5个字母）');
         }
@@ -92,34 +87,32 @@ document.addEventListener('DOMContentLoaded', () => {
 		document.getElementById('read-report').addEventListener('click', async function() {
 		    const stockCode = window.stockManager.getStockCode();
 		    const debugEl = document.getElementById('debug-area');
-		    debugEl.innerHTML = `正在获取 ${stockCode} 数据...`;
+//		    debugEl.innerHTML = `正在获取 ${stockCode} 数据...`;
 		    
 		    try {
-		        console.group('=== 开始数据获取流程 ===');
-	//	        console.log('1. 正在从数据库加载原始数据...', stockCode);
+						// 切换到蜡烛图 tab
+			      switchToTab('chart-tab');
+						
+		//        console.group('=== 开始数据获取流程 ===');
 		        
 		        // 第一步：直接从数据库加载原始数据
 		        const dbData = await StockDB.loadStockData(stockCode);
-	//	        console.log('2. 数据库返回的原始数据:', dbData;
 		        
 		        if (!dbData) {
 		            throw new Error('数据库中没有找到该股票的数据');
 		        }
 		
-	//	        console.log('3. 正在格式化数据...');
 		        const formattedData = await StockDB.getFormattedStockData(stockCode);
-		        console.log('4. 格式化后的数据样本:', formattedData.slice(0, 3)); // 显示前3条
+	//	        console.log('4. 格式化后的数据样本:', formattedData.slice(0, 3)); // 显示前3条
 		        
-		        debugEl.innerHTML += `<br>获取到 ${formattedData.length} 条数据`;
+	//	        debugEl.innerHTML += `<br>获取到 ${formattedData.length} 条数据`;
 		        
 		        if (formattedData && formattedData.length) {
-	//	            console.log('5. 准备绘制图表...');
 		            window.chartRenderer.updateChart(stockCode, formattedData);
-	//	            console.log('6. 图表更新完成');
 		        } else {
 		            const msg = '错误：格式化后数据为空';
 		            console.error(msg);
-		            debugEl.innerHTML += `<br>${msg}`;
+		     //       debugEl.innerHTML += `<br>${msg}`;
 		            window.chartRenderer.showError(msg);
 		        }
 		        
@@ -138,22 +131,17 @@ document.addEventListener('DOMContentLoaded', () => {
 document.getElementById('ai-analysis').addEventListener('click', async function () {
     const stockCode = window.stockManager.getStockCode();
     const debugEl = document.getElementById('debug-area');
-    debugEl.innerHTML = `正在生成 ${stockCode} 的 AI 分析报告...`;
+//    debugEl.innerHTML = `正在生成 ${stockCode} 的 AI 分析报告...`;
 		
 		toggleHourglass(true);
 
     try {
         // 切换到 AI 分析 tab
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.tab === 'ai-tab');
-        });
-        document.querySelectorAll('.tab-content').forEach(tab => {
-            tab.classList.toggle('active', tab.id === 'ai-tab');
-        });
+			  switchToTab('ai-tab');
 
         const result = await window.aiAnalysis.analyze(stockCode);
         window.reportGenerator.renderAIReport(result);
-        debugEl.innerHTML += `<br>报告生成完成`;
+   //     debugEl.innerHTML += `<br>报告生成完成`;
     } catch (err) {
         console.error('[AI 分析失败]', err);
         debugEl.innerHTML += `<br>发生错误: ${err.message || '未知错误'}`;
