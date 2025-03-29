@@ -81,52 +81,28 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 初始化图表
-    window.chartRenderer.initChart();
-    
-		// 修改后的read-report事件处理
-		document.getElementById('read-report').addEventListener('click', async function() {
-		    const stockCode = window.stockManager.getStockCode();
-		    const debugEl = document.getElementById('debug-area');
-//		    debugEl.innerHTML = `正在获取 ${stockCode} 数据...`;
-		    
-		    try {
-						// 切换到蜡烛图 tab
-			      switchToTab('chart-tab');
-						
-		//        console.group('=== 开始数据获取流程 ===');
-		        
-		        // 第一步：直接从数据库加载原始数据
-		        const dbData = await StockDB.loadStockData(stockCode);
-		        
-		        if (!dbData) {
-		            throw new Error('数据库中没有找到该股票的数据');
-		        }
+		window.chartRenderer.initChart();
 		
-		        const formattedData = await StockDB.getFormattedStockData(stockCode);
-	//	        console.log('4. 格式化后的数据样本:', formattedData.slice(0, 3)); // 显示前3条
-		        
-	//	        debugEl.innerHTML += `<br>获取到 ${formattedData.length} 条数据`;
-		        
-		        if (formattedData && formattedData.length) {
-		            window.chartRenderer.updateChart(stockCode, formattedData);
-		        } else {
-		            const msg = '错误：格式化后数据为空';
-		            console.error(msg);
-		     //       debugEl.innerHTML += `<br>${msg}`;
-		            window.chartRenderer.showError(msg);
-		        }
-		        
-		        console.groupEnd();
-		    } catch (error) {
-		        console.error('完整错误堆栈:', error);
-		        console.log('当前数据库状态:', await StockDB.getAllSymbols());
-		        
-		        debugEl.innerHTML += `<br>发生错误: ${error.message}`;
-		        window.chartRenderer.showError(`数据加载失败: ${error.message}`);
+		document.getElementById('chart-display').addEventListener('click', async function () {
+		  const stockCode = window.stockManager.getStockCode();
+		  switchToTab('chart-tab');
+		
+		  try {
+		    const formattedData = await StockDB.getFormattedStockData(stockCode);
+		    if (formattedData?.length > 0) {
+		      chartRenderer.initChart();
+		      chartRenderer.updateChart(stockCode, formattedData);
+		      chartRenderer.renderBarChart(stockCode);
+		    } else {
+		      chartRenderer.showError('无可用数据');
 		    }
+		  } catch (err) {
+		    console.error('[chart-display] 错误:', err);
+		    chartRenderer.showError('图表渲染失败: ' + err.message);
+		  }
 		});
-});
 
+});
 
 document.getElementById('ai-analysis').addEventListener('click', async function () {
     const stockCode = window.stockManager.getStockCode();

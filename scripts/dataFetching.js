@@ -102,6 +102,10 @@ async function fetchStockData(stockCode) {
             }
         }
 
+				// 获取技术指标
+				const indicators = await fetchAllTechnicalIndicators(stockCode, 90);
+				await saveTechnicalToDB(stockCode, indicators);
+
         // 3. 获取基础信息
         const overviewData = await fetchStockOverview(stockCode);
 

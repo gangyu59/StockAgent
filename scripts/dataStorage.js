@@ -74,40 +74,70 @@ var StockDB = (function () {
         }
     }
 
-    function _formatKey(symbol, type) {
-        const upperSymbol = symbol.toUpperCase();
-        const suffix = type.toUpperCase().includes('OVERVIEW') ? 'OVERVIEW' : 'TIME_SERIES';
-        return `${upperSymbol}_${suffix}`;
-    }
-
     return {
-        async saveStockData(symbol, data, type = 'daily') {
-            try {
-                const formattedSymbol = _formatKey(symbol, type);
-                await _executeTransaction('readwrite', 'delete', formattedSymbol); // 删除旧数据
+        /**
+         * 保存股票数据。根据类型生成不同的 key：
+         * - 'OVERVIEW' 类型：生成 "SYMBOL_OVERVIEW"
+         * - 'TECHNICAL_INDICATOR' 类型：生成 "SYMBOL_TECHNICAL_INDICATOR"
+         * - 其他类型（默认）：生成 "SYMBOL_TIME_SERIES"
+         */
+async saveStockData(symbol, data, type = 'daily') {
+    try {
+        // 1. 移除 symbol 末尾已存在的后缀
+        const baseSymbol = symbol
+            .toUpperCase()
+            .replace(/_(TECHNICAL_INDICATOR|OVERVIEW|TIME_SERIES)$/i, '');
 
-                const record = {
-                    symbol: formattedSymbol,
-                    data: data,
-                    type: type,
-                    lastUpdated: new Date().toISOString()
-                };
+        // 2. 根据 type 加后缀
+        const t = type.toUpperCase();
+        let suffix = 'TIME_SERIES';
+        if (t === 'OVERVIEW') {
+            suffix = 'OVERVIEW';
+        } else if (t === 'TECHNICAL_INDICATOR') {
+            suffix = 'TECHNICAL_INDICATOR';
+        }
+        const formattedSymbol = `${baseSymbol}_${suffix}`;
 
-      //          console.log('[DB] 保存记录:', record);
-                await _executeTransaction('readwrite', 'put', record);
-                console.log('[DB] 保存成功:', formattedSymbol);
-            } catch (error) {
-                console.error('[DB] 保存失败:', error);
-                throw error;
-            }
-        },
+        console.log(`[DB] 删除旧记录: ${formattedSymbol}`);
+        await _executeTransaction('readwrite', 'delete', formattedSymbol);
 
-        async loadStockData(symbol, type = 'TIME_SERIES') {
-            const formattedSymbol = _formatKey(symbol, type);
-            const result = await _executeTransaction('readonly', 'get', formattedSymbol);
-            console.log(`[DEBUG] 查询请求: ${symbol}, Key: ${formattedSymbol}, 命中: ${result ? '是' : '否'}`);
-            return result || null;
-        },
+        const record = {
+            symbol: formattedSymbol,
+            data: data,
+            type: type,
+            lastUpdated: new Date().toISOString()
+        };
+
+ //       console.log('[DB] 保存记录:', record);
+        await _executeTransaction('readwrite', 'put', record);
+        console.log('[DB] 保存成功:', formattedSymbol);
+
+    } catch (error) {
+        console.error('[DB] 保存失败:', error);
+        throw error;
+    }
+},
+
+async loadStockData(symbol, type = 'TIME_SERIES') {
+    // 1. 移除 symbol 末尾已存在的后缀
+    const baseSymbol = symbol
+        .toUpperCase()
+        .replace(/_(TECHNICAL_INDICATOR|OVERVIEW|TIME_SERIES)$/i, '');
+
+    // 2. 根据 type 加后缀
+    const t = type.toUpperCase();
+    let suffix = 'TIME_SERIES';
+    if (t === 'OVERVIEW') {
+        suffix = 'OVERVIEW';
+    } else if (t === 'TECHNICAL_INDICATOR') {
+        suffix = 'TECHNICAL_INDICATOR';
+    }
+    const formattedSymbol = `${baseSymbol}_${suffix}`;
+
+    const result = await _executeTransaction('readonly', 'get', formattedSymbol);
+    console.log(`[DEBUG] 查询请求: ${formattedSymbol}, 命中: ${result ? '是' : '否'}`);
+    return result || null;
+},
 
         async getFormattedStockData(symbol) {
             const dbData = await this.loadStockData(symbol, 'TIME_SERIES');
@@ -151,7 +181,7 @@ var StockDB = (function () {
                 volume: parseInt(item.volume) || 0
             })).sort((a, b) => a.date - b.date);
 
-  //          console.log("格式化完成，样本数据:", formattedData.slice(0, 3));
+//            console.log("格式化完成，样本数据:", formattedData.slice(0, 3));
             return formattedData;
         }
     };
