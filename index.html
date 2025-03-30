@@ -17,6 +17,7 @@
 		<script src="https://cdn.jsdelivr.net/npm/date-fns@3.0.0/dist/date-fns.min.js"></script>
 		<!-- 引入日期适配器 -->
 		<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.min.js"></script>
+		<link rel="icon" href="assets/icons.svg">
 </head>
 <body>
     <div id="container">
@@ -41,7 +42,7 @@
                 <button id="fetch-data">获取数据</button>
                 <button id="search-news">搜索新闻</button>
 								<button id="chart-display">生成图表</button>
-                <button id="ai-analysis">AI 分析</button>
+                <button id="ai-analysis">AI分析</button>
             </div>
 
 						<!-- Tab 选项 -->
@@ -49,14 +50,16 @@
 						  <button class="tab-btn active" data-tab="overview-tab">基础信息</button>
 						  <button class="tab-btn" data-tab="news-tab">最近新闻</button>
 						  <button class="tab-btn" data-tab="chart-tab">图表展示</button>
-						  <button class="tab-btn" data-tab="compare-tab">行业比较</button>
 						  <button class="tab-btn" data-tab="ai-tab">投资报告</button>
 						</div>
 						
 						<!-- Tab 内容区 -->
 						<div id="output-tabs">
-						  <div id="overview-tab" class="tab-content active"></div>
-						  <div id="news-tab" class="tab-content"></div>
+						  <div id="overview-tab" class="tab-content active">
+						  </div>
+							
+						  <div id="news-tab" class="tab-content">	
+						  </div>
 							
 							<!-- 图表展示 tab -->
 							<div id="chart-tab" class="tab-content">
@@ -70,14 +73,21 @@
 							  <canvas id="metrics-chart" style="width: 100%; max-width: 800px; height: 300px;"></canvas>
 							</div>
 							
-						  <div id="compare-tab" class="tab-content"></div>
-						  <div id="ai-tab" class="tab-content"></div>
+						  <div id="ai-tab" class="tab-content">
+						  </div>
 						</div>
 						
-						  <!-- 加载指示器 -->
-						  <div id="loading-indicator" class="loading-hidden">
+						<!-- 全局 Copy 按钮 -->
+						<button id="copy-btn" class="copy-btn">
+						  <svg class="icon copy-icon">
+						    <use href="assets/icons.svg#copy-icon"></use>
+						  </svg>
+						</button>
+						
+						<!-- 加载指示器 -->
+						<div id="loading-indicator" class="loading-hidden">
 						    <div class="hourglass"></div>
-						  </div>
+						</div>
 						
 						<!-- 在chart-area下方添加 -->
 						<div id="debug-area" style="color:red; padding:10px; font-family:monospace;"></div>
