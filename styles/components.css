@@ -124,3 +124,38 @@ button:hover {
 #expanded-stock-list li button:hover {
     background-color: #cc0000;
 }
+
+#output-tabs, .tab-content {
+    position: relative;
+    z-index: 1;
+}
+
+.copy-btn {
+  position: fixed;
+  top: 270px;
+  right: 10px;
+  background: transparent !important;
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  width: 24px !important;
+  height: 24px !important;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  box-shadow: none !important;
+  z-index: 9999;
+}
+
+.copy-icon {
+  width: 18px;
+  height: 18px;
+  fill: #666;
+  transition: fill 0.3s ease;
+}
+
+.copy-btn:hover .copy-icon,
+.copy-btn.copied .copy-icon {
+  fill: #007bff;
+}
