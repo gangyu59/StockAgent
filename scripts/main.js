@@ -61,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (stockCode) {
 					  // 切换到基础信息 tab
 			      switchToTab('overview-tab');
-							
             fetchStockData(stockCode);
         } else {
             showMessage('请输入有效的股票代码（1-5个字母）');
@@ -72,9 +71,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('search-news').addEventListener('click', () => {
         const stockCode = window.stockManager.getStockCode();
         if (stockCode) {
+							showCopyButton(false); // 隐藏copy按钮
 					   	// 切换到新闻 tab
 			        switchToTab('news-tab');
             window.newsSearch.searchStockNews(stockCode);
+							showCopyButton(true);  // 显示copy按钮
+							
         } else {
             showMessage('请输入有效的股票代码（1-5个字母）');
         }
@@ -110,7 +112,8 @@ document.getElementById('ai-analysis').addEventListener('click', async function 
 //    debugEl.innerHTML = `正在生成 ${stockCode} 的 AI 分析报告...`;
 		
 		toggleHourglass(true);
-
+		showCopyButton(false); // 隐藏copy按钮
+		
     try {
         // 切换到 AI 分析 tab
 			  switchToTab('ai-tab');
@@ -124,14 +127,9 @@ document.getElementById('ai-analysis').addEventListener('click', async function 
         document.getElementById('ai-tab').innerHTML = `<div style="color: red;">AI 分析失败：${err.message}</div>`;
     }
 		toggleHourglass(false);
+		showCopyButton(true); // 展示copy按钮
 });
 
-function generateStockReport(data) {
-    console.log('Generating report for:', data);
-    // 生成研究报告
-}
-
-//切换tab
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     // 激活按钮
@@ -144,5 +142,8 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
       tab.classList.remove('active');
     });
     document.getElementById(targetId).classList.add('active');
+
+    // 清除残留选区
+    window.getSelection().removeAllRanges();
   });
 });

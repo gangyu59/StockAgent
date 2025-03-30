@@ -78,3 +78,46 @@ function switchToTab(tabId) {
         }, 50); // 延迟执行，确保 tab 已完全显示
     }
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const copyBtn = document.getElementById('copy-btn');
+
+  if (!copyBtn) return;
+
+  copyBtn.addEventListener('click', () => {
+    const activeTab = document.querySelector('.tab-content.active');
+    if (!activeTab) return;
+
+    // 创建临时 textarea
+    const tempTextArea = document.createElement('textarea');
+    tempTextArea.style.position = 'absolute';
+    tempTextArea.style.opacity = '0';
+    tempTextArea.style.pointerEvents = 'none';
+    tempTextArea.style.zIndex = '-1';
+    tempTextArea.value = activeTab.innerText.trim();
+    document.body.appendChild(tempTextArea);
+
+    // 执行复制
+    tempTextArea.focus();
+    tempTextArea.select();
+    const copied = document.execCommand('copy');
+    document.body.removeChild(tempTextArea);
+
+    // 按钮闪一下
+    copyBtn.classList.add('copied');
+    setTimeout(() => copyBtn.classList.remove('copied'), 300);
+
+    if (copied) {
+      console.log('复制成功！');
+    } else {
+      console.warn('复制失败，请手动操作');
+    }
+  });
+});
+
+function showCopyButton(show = true) {
+    const btn = document.getElementById('copy-btn');
+    if (btn) {
+        btn.style.display = show ? 'flex' : 'none';
+    }
+}

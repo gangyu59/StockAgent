@@ -91,6 +91,7 @@ async function searchStockNews(stockCode) {
 		
     try {
 				toggleHourglass(true);
+				showCopyButton(false); // 隐藏copy按钮
             const newsList = await fetchStockNews(stockCode);
             if (newsList.length > 0) {
                 displayNewsList(newsList, stockCode); // 添加股票代码参数
@@ -105,6 +106,7 @@ async function searchStockNews(stockCode) {
         }
     }
 		toggleHourglass(false);
+		showCopyButton(true); // 展示copy按钮
 }
 
 // 导出

@@ -50,7 +50,7 @@ function displayStockOverview(data) {
 
     // 清空当前页（不影响其他 tab）
     outputElement.innerHTML = '';
-
+		
     const overviewHTML = `
         <div class="section">
             <div class="section-title">公司概况</div>
@@ -84,7 +84,8 @@ function displayStockOverview(data) {
 }
 
 async function fetchStockData(stockCode) {
-    toggleHourglass(true);
+    showCopyButton(false); // 隐藏copy按钮
+		toggleHourglass(true);
     try {
         // 1. 获取时间序列数据
         const timeSeriesData = await fetchStockTimeSeries(stockCode);
@@ -126,6 +127,7 @@ async function fetchStockData(stockCode) {
             `<div class="error">${stockCode} 数据获取失败: ${error.message}</div>`;
     } finally {
         toggleHourglass(false);
+				showCopyButton(true); // 展示copy按钮
     }
 }
 
