@@ -121,7 +121,21 @@ ${indicatorTable}
             throw new Error('GPT 响应为空或格式不正确');
         }
 
+				// 存入 IndexedDB
+        await saveReportToDB(symbol, resultText.trim());
+
         return resultText.trim();
+    }
+		
+		// 存储 AI 分析结果
+    async function saveReportToDB(symbol, content) {
+        const key = symbol.toUpperCase();
+        try {
+            await StockDB.saveStockData(key, content, 'REPORT');
+            console.log('[AI分析] 报告已保存到数据库:', `${key}_REPORT`);
+        } catch (err) {
+            console.error('[AI分析] 保存报告失败:', err.message);
+        }
     }
 
     return {
