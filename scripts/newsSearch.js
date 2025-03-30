@@ -11,15 +11,15 @@ async function fetchStockNews(symbol, limit = 10) {
             throw new Error(`News API error: ${data.message || 'Unknown error'}`);
         }
 
-        // 添加日期处理和摘要字段
+        // 格式化处理
         const articles = data.articles || [];
         const newsList = articles
-            .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt)) // 时间倒序
+            .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
             .slice(0, limit)
             .map(article => ({
-                date: formatDate(article.publishedAt), // 新增日期格式化
+                date: formatDate(article.publishedAt),
                 title: article.title || 'No title',
-                summary: truncateSummary(article.description || article.content || ''), // 新增摘要
+                summary: truncateSummary(article.description || article.content || ''),
                 link: article.url || '#'
             }));
 
@@ -29,17 +29,31 @@ async function fetchStockNews(symbol, limit = 10) {
         return [];
     }
 }
-		
+
+// 保存到 IndexedDB
+async function saveNewsToDB(symbol, newsList) {
+    const key = `${symbol.toUpperCase()}_NEWS`;
+    const record = {
+        symbol: key,
+        type: 'NEWS',
+        data: newsList,
+        lastUpdated: new Date().toISOString()
+    };
+    try {
+        console.log(`[DB] 删除旧新闻记录: ${key}`);
+        await StockDB.saveStockData(symbol, newsList, 'NEWS');
+        console.log('[DB] 新闻保存成功:', key);
+    } catch (err) {
+        console.error('[DB] 新闻保存失败:', err.message);
+    }
+}
+
 // 展示新闻列表
 function displayNewsList(newsList, symbol) {
     const outputElement = document.getElementById('news-tab');
     if (!outputElement) return;
 
-    // 清空输出框
-    outputElement.innerHTML = '';
-
-    // 创建符合CSS结构的新闻列表
-    const newsHTML = `
+    outputElement.innerHTML = `
     <div class="stock-news-container">
         <h4>${symbol} 最新新闻</h4>
         <ol class="stock-news-list">
@@ -48,21 +62,14 @@ function displayNewsList(newsList, symbol) {
                 <span class="news-rank">${index + 1}.</span>
                 <div class="news-content">
                     <span class="news-date">${news.date}</span>
-                    <a href="${news.link}" 
-                       target="_blank" 
-                       class="news-title"
-                       title="${news.summary}">${news.title}</a>
+                    <a href="${news.link}" target="_blank" class="news-title" title="${news.summary}">${news.title}</a>
                     ${news.summary ? `<p class="news-summary">${news.summary}</p>` : ''}
                 </div>
             </li>
             `).join('')}
         </ol>
-        <div class="news-footer">
-            数据更新时间: ${new Date().toLocaleString('zh-CN')}
-        </div>
+        <div class="news-footer">数据更新时间: ${new Date().toLocaleString('zh-CN')}</div>
     </div>`;
-
-    outputElement.innerHTML = newsHTML;
 }
 
 // 日期格式化函数
@@ -70,7 +77,7 @@ function formatDate(isoString) {
     if (!isoString) return '未知日期';
     try {
         const date = new Date(isoString);
-        return date.toISOString().split('T')[0]; // 返回YYYY-MM-DD格式
+        return date.toISOString().split('T')[0];
     } catch {
         return '日期无效';
     }
@@ -79,34 +86,36 @@ function formatDate(isoString) {
 // 摘要处理函数
 function truncateSummary(text, maxLength = 80) {
     if (!text) return '';
-    const cleanText = text.replace(/<\/?[^>]+(>|$)/g, ""); // 移除HTML标签
+    const cleanText = text.replace(/<\/?[^>]+(>|$)/g, ""); // 移除 HTML 标签
     return cleanText.length > maxLength 
         ? cleanText.substring(0, maxLength) + '...'
         : cleanText;
 }
 
-// 搜索新闻
+// 搜索新闻主函数
 async function searchStockNews(stockCode) {
     const outputElement = document.getElementById('output-content');
-		
     try {
-				toggleHourglass(true);
-				showCopyButton(false); // 隐藏copy按钮
-            const newsList = await fetchStockNews(stockCode);
-            if (newsList.length > 0) {
-                displayNewsList(newsList, stockCode); // 添加股票代码参数
-            } else {
-                outputElement.innerHTML = `<p class="no-news">未找到相关新闻</p>`;
-            }
-            await new Promise(resolve => setTimeout(resolve, 1000));
+        toggleHourglass(true);
+        showCopyButton(false);
+
+        const newsList = await fetchStockNews(stockCode);
+        if (newsList.length > 0) {
+            await saveNewsToDB(stockCode, newsList);
+            displayNewsList(newsList, stockCode);
+        } else {
+            outputElement.innerHTML = `<p class="no-news">未找到相关新闻</p>`;
+        }
+
+        await new Promise(resolve => setTimeout(resolve, 1000));
     } catch (error) {
         console.error('新闻搜索失败:', error);
         if (outputElement) {
             outputElement.innerHTML = `<p class="error">新闻获取失败: ${error.message}</p>`;
         }
     }
-		toggleHourglass(false);
-		showCopyButton(true); // 展示copy按钮
+    toggleHourglass(false);
+    showCopyButton(true);
 }
 
 // 导出
