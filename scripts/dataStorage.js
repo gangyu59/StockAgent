@@ -91,11 +91,13 @@ async saveStockData(symbol, data, type = 'daily') {
         // 2. 根据 type 加后缀
         const t = type.toUpperCase();
         let suffix = 'TIME_SERIES';
-        if (t === 'OVERVIEW') {
-            suffix = 'OVERVIEW';
-        } else if (t === 'TECHNICAL_INDICATOR') {
-            suffix = 'TECHNICAL_INDICATOR';
-        }
+				if (t === 'OVERVIEW') {
+				    suffix = 'OVERVIEW';
+				} else if (t === 'TECHNICAL_INDICATOR') {
+				    suffix = 'TECHNICAL_INDICATOR';
+				} else if (t === 'REPORT') {
+				    suffix = 'REPORT'; // 添加这句
+				}
         const formattedSymbol = `${baseSymbol}_${suffix}`;
 
         console.log(`[DB] 删除旧记录: ${formattedSymbol}`);
@@ -126,12 +128,14 @@ async loadStockData(symbol, type = 'TIME_SERIES') {
 
     // 2. 根据 type 加后缀
     const t = type.toUpperCase();
-    let suffix = 'TIME_SERIES';
-    if (t === 'OVERVIEW') {
-        suffix = 'OVERVIEW';
-    } else if (t === 'TECHNICAL_INDICATOR') {
-        suffix = 'TECHNICAL_INDICATOR';
-    }
+		let suffix = 'TIME_SERIES';
+		if (t === 'OVERVIEW') {
+				    suffix = 'OVERVIEW';
+		} else if (t === 'TECHNICAL_INDICATOR') {
+				    suffix = 'TECHNICAL_INDICATOR';
+		} else if (t === 'REPORT') {
+				    suffix = 'REPORT'; // 添加这句
+		}
     const formattedSymbol = `${baseSymbol}_${suffix}`;
 
     const result = await _executeTransaction('readonly', 'get', formattedSymbol);
@@ -186,6 +190,31 @@ async loadStockData(symbol, type = 'TIME_SERIES') {
         }
     };
 })();
+
+// 提供通用的 getDB 和 getData 方法，供外部调用（如生成 PDF 时使用）
+window.dbHelper = {
+  async getDB() {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open('StockDataDB_v2', 1);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  },
+
+  async getData(db, key) {
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(['stock_data'], 'readonly');
+      const store = tx.objectStore('stock_data');
+      const request = store.get(key);
+      request.onsuccess = () => {
+        const result = request.result;
+        resolve(result ? result.data : null); // 取出 data 字段
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+};
+
 
 //下面是维护感兴趣的股票清单的函数
 function saveStockList(stockList) {

@@ -31,8 +31,65 @@ window.stockManager = {
         localStorage.setItem('stockList', JSON.stringify(stockList));
     },
 
+// 渲染股票清单（支持单选 + 自动关闭 + 外部更新）
+renderStockList: function(stockList) {
+    const listElement = document.getElementById('stock-list');
+    const expandedList = document.getElementById('expanded-stock-list');
+    const stockInput = document.getElementById('stock-code');
+    const toggleIcon = document.querySelector('#toggle-icon i');
+
+    if (!listElement || !expandedList) return;
+
+    const escapeHTML = str => str.replace(/[&<>'"]/g, tag => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[tag]));
+
+    // 当前选中的股票（默认用输入框值）
+    const selectedCode = stockInput?.value?.toUpperCase() || stockList[stockList.length - 1] || '';
+
+    // 外部清单仅显示一个当前选中
+    listElement.innerHTML = selectedCode
+        ? `<li>${escapeHTML(selectedCode)} <button class="delete-stock">×</button></li>`
+        : '';
+
+    // 展开列表渲染所有股票
+    expandedList.innerHTML = stockList.map(code => `
+        <li class="stock-item ${code === selectedCode ? 'selected' : ''}" data-symbol="${escapeHTML(code)}">
+            ${escapeHTML(code)} <button class="delete-stock">×</button>
+        </li>
+    `).join('');
+
+    // 添加点击事件：单选 + 输入框赋值 + 自动关闭
+    Array.from(expandedList.querySelectorAll('li.stock-item')).forEach(li => {
+        li.addEventListener('click', (e) => {
+            if (e.target.classList.contains('delete-stock')) return;
+
+            const symbol = li.dataset.symbol;
+            if (!symbol) return;
+
+            // 单选：取消所有已选
+            expandedList.querySelectorAll('li.selected').forEach(el => el.classList.remove('selected'));
+            li.classList.add('selected');
+
+            // 设置输入框
+            if (stockInput) stockInput.value = symbol;
+
+            // 自动关闭列表
+            expandedList.style.display = 'none';
+            if (toggleIcon) {
+                toggleIcon.classList.remove('fa-chevron-up');
+                toggleIcon.classList.add('fa-chevron-down');
+            }
+
+            // 重新渲染外部展示
+            this.renderStockList(this.loadStockList());
+        });
+    });
+},
+
+
     // 渲染股票清单
-    renderStockList: function(stockList) {
+    renderStockList0: function(stockList) {
         const listElement = document.getElementById('stock-list');
         const expandedList = document.getElementById('expanded-stock-list');
         if (!listElement || !expandedList) return;

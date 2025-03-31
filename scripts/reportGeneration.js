@@ -22,68 +22,132 @@ window.reportGenerator = (function () {
     };
 })();
 
-async function generatePdfReport0(symbol, reportText) {
-    const { PDFDocument, rgb, StandardFonts } = PDFLib;
 
-		console.log('开始生成 PDF：', symbol);
-		
-    // 加载字体
-    const fontUrl = 'assets/fonts/NotoSansSC-Regular.ttf';
-		console.log('准备加载字体...');
-    const fontResponse = await fetch(fontUrl);
-		console.log('字体响应结果:', fontResponse);
-		if (!fontResponse.ok) {
-		  throw new Error('字体文件加载失败：' + fontResponse.statusText);
-		}
-		const fontBytes = await fontResponse.arrayBuffer();
-		console.log('字体加载完成，开始创建 PDF');
-		
-    // 创建 PDF 文档
-    const pdfDoc = await PDFDocument.create();
-    let page = pdfDoc.addPage([595, 842]); // A4大小
-    const font = await pdfDoc.embedFont(fontBytes);
 
-    const fontSize = 12;
-    const lineHeight = 20;
-    const margin = 40;
-    const maxWidth = 515;
-    let textY = 800;
 
-    const lines = splitTextToLines(reportText, font, fontSize, maxWidth);
+function drawTableRow(page, rowText, x, y, colWidths, font, fontSize) {
+  const cols = rowText.split('|').map(col => col.trim());
+  let xPos = x;
 
-for (let line of lines) {
-  if (textY < margin) {
-    page = pdfDoc.addPage([595, 842]);
-    textY = 800;
-  }
-
-  try {
-    page.drawText(line, {
-      x: margin,
-      y: textY,
+  for (let i = 0; i < cols.length; i++) {
+    const colText = cols[i];
+    page.drawText(colText, {
+      x: xPos + 2,
+      y,
       size: fontSize,
       font,
-      color: rgb(0, 0, 0)
     });
-  } catch (drawErr) {
-    console.error('[drawText 出错] 当前行内容：', line);
-    console.error(drawErr);
-    throw drawErr; // 或者 continue 跳过当前行
+    xPos += colWidths[i] || 100;
   }
-
-  textY -= lineHeight;
 }
 
-    const pdfBytes = await pdfDoc.save();
+function sanitizeText(text) {
+  return text
+    // 移除 GPT 返回中的转义 Unicode（如 \u2191）
+    .replace(/\\[uU][0-9a-fA-F]{4}/g, '')
 
-    // 触发下载
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${symbol}_投资报告.pdf`;
-    link.click();
-		console.log('PDF 已创建，开始下载...');
+    // 清除不可见字符
+    .replace(/[\u0000-\u001F\u007F]/g, '')
+    .replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '')
+
+    // 替换特殊空格
+    .replace(/[\u00A0\u1680\u180E\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
+
+    // 替换非 ASCII 标点
+    .replace(/[‐‑‒–—―]/g, '-')   // 破折号
+    .replace(/[‘’‚‛]/g, "'")
+    .replace(/[“”„‟]/g, '"')
+    .replace(/[…⋯⋮⋱]/g, '...')
+    .replace(/[•◦∙·]/g, '-')     // bullet 项
+    .replace(/[※☆★◆◇◎]/g, '*')
+
+    // 替换全角标点
+    .replace(/，/g, ',')
+    .replace(/。/g, '.')
+    .replace(/：/g, ':')
+    .replace(/；/g, ';')
+    .replace(/（/g, '(')
+    .replace(/）/g, ')')
+    .replace(/[【】]/g, '[]')
+    .replace(/[《》]/g, '<>')
+
+    // 保留 Markdown 表格结构的竖线 |，不要再删掉！
+    //.replace(/\|/g, ' ') <-- 移除这句！
+
+    // 清除 markdown 标题等，但保留表格结构
+    .replace(/(^|\n)#{1,6}\s*/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/[*_~`#]/g, '')
+
+    // 百分号正常化
+    .replace(/([+-]?\d+(\.\d+)?)%/g, '$1 percent')
+
+    // 空行、空格压缩
+    .replace(/ {2,}/g, ' ')
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\n\s*\n/g, '\n\n')
+    .replace(/^\s+|\s+$/gm, '')
+		.replace(/[↑↓↗↘↔↕⇧⇩]/g, '')  // 删除箭头字符
+
+    .trim();
 }
+
+// GPT 翻译函数（调用 callGPT）
+async function translateTextToEnglish(text) {
+    const messages = [
+        {
+            role: 'system',
+            content: `You are a professional financial translator. Please translate the following Chinese investment report into fluent, formal English suitable for professional PDF reporting. Only output the translated text, do not explain. Strictly follow the following rules: 1. The result must be purely English, no Chinese or non-English characters. 2. Use only standard ASCII characters: letters, numbers, and common punctuation (. , : ; - ( )). Avoid arrows (→), fancy symbols (★), emojis, and any special Unicode. 3. If the original contains tables or special formatting, simplify it into readable English paragraphs. 4. Ensure content remains professional, clear, and concise. Always sanitize your output to ensure it is PDF-safe and English-only.`.trim(),
+        },
+        {
+            role: 'user',
+            content: text
+        }
+    ];
+
+    const response = await callGPT(messages);
+    const result = response?.choices?.[0]?.message?.content;
+		console.log("英文翻译结果：", result);
+    return result?.trim();
+}
+
+// 绑定“下载 PDF 报告”按钮事件（英文版）
+document.getElementById('download-pdf-btn').addEventListener('click', async () => {
+    const input = document.querySelector('input[type="text"]');
+    if (!input || !input.value.trim()) {
+        alert('请输入有效的股票代码');
+        return;
+    }
+
+    const symbol = input.value.trim().toUpperCase();
+    const key = `${symbol}_REPORT`;
+
+		toggleHourglass(true);
+    try {
+        const record = await StockDB.loadStockData(symbol, 'REPORT');
+        if (!record || !record.data) {
+            alert(`未找到 ${symbol} 的分析报告，请先生成`);
+            return;
+        }
+
+        const chineseText = record.data;
+        const englishText = await translateTextToEnglish(chineseText);
+        if (!englishText) {
+            throw new Error('翻译失败或结果为空');
+        }
+
+				console.log("清理之前：", englishText);
+        const cleanText = sanitizeText(englishText);
+				console.log("清理之后：", cleanText);
+				
+				await generatePdfReport(symbol, cleanText);
+    } catch (err) {
+        console.error('[PDF] 报告生成失败:', err);
+        alert('报告下载失败，请稍后再试');
+    }
+		
+		toggleHourglass(false);
+});
 
 async function generatePdfReport(symbol, reportText) {
   try {
@@ -199,8 +263,6 @@ async function generatePdfReport(symbol, reportText) {
   }
 }
 
-
-
 function splitTextToParagraphs(text) {
   const result = [];
   const parts = text.split(/(?=\d+\.\s|[A-Z][a-z]+:|- )/g);
@@ -212,179 +274,29 @@ function splitTextToParagraphs(text) {
 }
 
 function splitTextToLines(text, font, fontSize, maxWidth) {
-  const words = text.split(/\s+/);
+  const words = text.trim().split(/\s+/).filter(Boolean);
   const lines = [];
   let currentLine = '';
 
   for (let i = 0; i < words.length; i++) {
     const word = words[i];
     const testLine = currentLine ? currentLine + ' ' + word : word;
-    const width = font.widthOfTextAtSize(testLine, fontSize);
-
-    if (width > maxWidth) {
-      const wordCount = currentLine.trim().split(/\s+/).length;
-      if (wordCount <= 2 && lines.length > 0) {
-        lines[lines.length - 1] += ' ' + currentLine;
-        currentLine = word;
-      } else {
-        lines.push(currentLine);
-        currentLine = word;
-      }
-    } else {
-      currentLine = testLine;
-    }
-  }
-  if (currentLine) lines.push(currentLine);
-  return lines;
-}
-
-
-function drawTableRow(page, rowText, x, y, colWidths, font, fontSize) {
-  const cols = rowText.split('|').map(col => col.trim());
-  let xPos = x;
-
-  for (let i = 0; i < cols.length; i++) {
-    const colText = cols[i];
-    page.drawText(colText, {
-      x: xPos + 2,
-      y,
-      size: fontSize,
-      font,
-    });
-    xPos += colWidths[i] || 100;
-  }
-}
-
-function sanitizeText(text) {
-  return text
-    // 移除 GPT 返回中的转义 Unicode（如 \u2191）
-    .replace(/\\[uU][0-9a-fA-F]{4}/g, '')
-
-    // 清除不可见字符
-    .replace(/[\u0000-\u001F\u007F]/g, '')
-    .replace(/[\u200B-\u200F\u202A-\u202E\u2060-\u206F\uFEFF]/g, '')
-
-    // 替换特殊空格
-    .replace(/[\u00A0\u1680\u180E\u2000-\u200A\u202F\u205F\u3000]/g, ' ')
-
-    // 替换非 ASCII 标点
-    .replace(/[‐‑‒–—―]/g, '-')   // 破折号
-    .replace(/[‘’‚‛]/g, "'")
-    .replace(/[“”„‟]/g, '"')
-    .replace(/[…⋯⋮⋱]/g, '...')
-    .replace(/[•◦∙·]/g, '-')     // bullet 项
-    .replace(/[※☆★◆◇◎]/g, '*')
-
-    // 替换全角标点
-    .replace(/，/g, ',')
-    .replace(/。/g, '.')
-    .replace(/：/g, ':')
-    .replace(/；/g, ';')
-    .replace(/（/g, '(')
-    .replace(/）/g, ')')
-    .replace(/[【】]/g, '[]')
-    .replace(/[《》]/g, '<>')
-
-    // 保留 Markdown 表格结构的竖线 |，不要再删掉！
-    //.replace(/\|/g, ' ') <-- 移除这句！
-
-    // 清除 markdown 标题等，但保留表格结构
-    .replace(/(^|\n)#{1,6}\s*/g, '')
-    .replace(/\*\*(.*?)\*\*/g, '$1')
-    .replace(/[*_~`#]/g, '')
-
-    // 百分号正常化
-    .replace(/([+-]?\d+(\.\d+)?)%/g, '$1 percent')
-
-    // 空行、空格压缩
-    .replace(/ {2,}/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/\n\s*\n/g, '\n\n')
-    .replace(/^\s+|\s+$/gm, '')
-
-    .trim();
-}
-
-
-function splitTextToLines(text, font, fontSize, maxWidth) {
-  const words = text.split(/\s+/);
-  const lines = [];
-  let currentLine = '';
-
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    const testLine = currentLine ? currentLine + ' ' + word : word;
-    const width = font.widthOfTextAtSize(testLine, fontSize);
-
-    if (width > maxWidth) {
-      const currentWordCount = currentLine.trim().split(/\s+/).length;
-
-      if (currentWordCount <= 2 && lines.length > 0) {
-        // 少于2个词，把这行并入上一行
-        lines[lines.length - 1] += ' ' + currentLine;
-        currentLine = word;
-      } else {
-        lines.push(currentLine);
-        currentLine = word;
-      }
-    } else {
-      currentLine = testLine;
-    }
-  }
-  if (currentLine) lines.push(currentLine);
-  return lines;
-}
-
-// GPT 翻译函数（调用 callGPT）
-async function translateTextToEnglish(text) {
-    const messages = [
-        {
-            role: 'system',
-            content: `You are a professional financial translator. Please translate the following Chinese investment report into fluent, formal English suitable for professional PDF reporting. Only output the translated text, do not explain. Strictly follow the following rules: 1. The result must be purely English, no Chinese or non-English characters. 2. Use only standard ASCII characters: letters, numbers, and common punctuation (. , : ; - ( )). Avoid arrows (→), fancy symbols (★), emojis, and any special Unicode. 3. If the original contains tables or special formatting, simplify it into readable English paragraphs. 4. Ensure content remains professional, clear, and concise. Always sanitize your output to ensure it is PDF-safe and English-only.`.trim(),
-        },
-        {
-            role: 'user',
-            content: text
-        }
-    ];
-
-    const response = await callGPT(messages);
-    const result = response?.choices?.[0]?.message?.content;
-		console.log("英文翻译结果：", result);
-    return result?.trim();
-}
-
-// 绑定“下载 PDF 报告”按钮事件（英文版）
-document.getElementById('download-pdf-btn').addEventListener('click', async () => {
-    const input = document.querySelector('input[type="text"]');
-    if (!input || !input.value.trim()) {
-        alert('请输入有效的股票代码');
-        return;
-    }
-
-    const symbol = input.value.trim().toUpperCase();
-    const key = `${symbol}_REPORT`;
-
+    let width = 0;
     try {
-        const record = await StockDB.loadStockData(symbol, 'REPORT');
-        if (!record || !record.data) {
-            alert(`未找到 ${symbol} 的分析报告，请先生成`);
-            return;
-        }
-
-        const chineseText = record.data;
-        const englishText = await translateTextToEnglish(chineseText);
-        if (!englishText) {
-            throw new Error('翻译失败或结果为空');
-        }
-
-				console.log("清理之前：", englishText);
-        const cleanText = sanitizeText(englishText);
-				console.log("清理之后：", cleanText);
-				
-				await generatePdfReport(symbol, cleanText);
-    } catch (err) {
-        console.error('[PDF] 报告生成失败:', err);
-        alert('报告下载失败，请稍后再试');
+      width = font.widthOfTextAtSize(testLine, fontSize);
+    } catch (e) {
+      console.warn('[PDF] 测量失败：', testLine);
+      width = 9999;
     }
-});
+
+    if (width > maxWidth) {
+      lines.push(currentLine.trim());
+      currentLine = word;
+    } else {
+      currentLine = testLine;
+    }
+  }
+
+  if (currentLine) lines.push(currentLine.trim());
+  return lines;
+}
