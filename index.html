@@ -17,6 +17,7 @@
 		<script src="https://cdn.jsdelivr.net/npm/date-fns@3.0.0/dist/date-fns.min.js"></script>
 		<!-- 引入日期适配器 -->
 		<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.min.js"></script>
+		<script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
 		<link rel="icon" href="assets/icons.svg">
 </head>
 <body>
@@ -25,8 +26,10 @@
         <div id="app">
             <!-- 输入区 -->
             <div id="input-area">
-                <input type="text" id="stock-code" placeholder="输入股票代码（如 AAPL）">
+                <input type="text" id="stock-code" placeholder="输入股票代码（如AAPL）">
                 <button id="add-stock">添至清单</button>
+								<!-- 下载 PDF 按钮 -->
+							  <button id="download-pdf-btn">下载PDF</button>
             </div>
 
             <!-- 清单维护区 -->
