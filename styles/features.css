@@ -7,8 +7,8 @@
     padding: 5px 10px;
     border: 1px solid #ccc;
     border-radius: 5px;
-    width: 180px;
-		margin-right: 8px;
+    width: 170px;
+		margin-right: 6px;
 }
 
 #stock-code:focus {
@@ -17,6 +17,12 @@
 }
 
 /* 输出区样式 */
+.tab-content {
+    width: 100%;
+    min-height: 450px;
+    box-sizing: border-box;
+}
+
 #output-content {
     background-color: white;
     padding: 10px;
