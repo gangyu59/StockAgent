@@ -37,7 +37,7 @@ button:hover {
     display: flex;
     align-items: center;
     gap: 0px;
-    min-width: 140px; /* 控制主框宽度 */
+		width: 55%;
 }
 
 #stock-list li {
@@ -47,22 +47,23 @@ button:hover {
     display: flex;
     align-items: center;
     gap: 0px;
+		width: 65%;
 }
 
 #stock-list li button {
-    background-color: #ff4d4d;
     border: none;
     color: white;
+		background-color: #e0e0e0;
     padding: 4px 8px;
     border-radius: 3px;
-		margin-left: 45px;
+		margin-left: 0px;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 0px;
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    width: 0px;
+    height: 0px;
 }
 
 #stock-list li button:hover {
@@ -72,7 +73,7 @@ button:hover {
 #toggle-icon {
     font-size: 16px;
     cursor: pointer;
-    margin-left: 20px;
+    margin-left: -90px;
 }
 
 #expanded-stock-list {
@@ -85,7 +86,7 @@ button:hover {
     border-radius: 5px;
     max-height: 400px;
     overflow-y: auto;
-    width: calc(100% - 278px); /* 根据 margin-left 调整宽度 */
+    width: 40%;
 }
 
 #expanded-stock-list li {

@@ -6,33 +6,63 @@ body {
     background-color: #f4f4f9;
 }
 
+/* 标题 */
 h1 {
-    margin: 10px 0; /* 减少标题上方的空白 */
-    font-size: 2.0rem;
+    margin: 10px 0;
+    font-size: 6vw; /* 改为随屏幕宽度变化 */
     color: #333;
     text-align: center;
 }
 
+/* 外部容器，垂直居中 */
 #container {
     display: flex;
     flex-direction: column;
     align-items: center;
     min-height: 100vh;
-    padding-top: 10px; /* 调整上边距，减少上方空间 */
+    padding-top: 1vh; /* 使用相对单位 */
+    box-sizing: border-box;
 }
 
+/* 应用主体区域 */
 #app {
-    width: 95%;
+    width: 100vw; /* 改为相对于视口宽度 */
     max-width: 800px;
-		max-height: 800px;
-    padding: 10px;
+    padding: 1vh;
+    box-sizing: border-box;
 }
 
-#input-area, #stock-list-area, #action-buttons, #output-area, #chart-area {
-    margin-bottom: 0px;
+/* 子区域通用样式 */
+#input-area,
+#stock-list-area,
+#action-buttons,
+#output-area,
+#chart-area {
+    margin-bottom: 1vh;
+    width: 100%; /* 保证子区域填满容器 */
 }
 
-#output-content, #chart-area {
-	  min-height: 390px;
-    max-height: 800px;
+/* 输出和图表区域 */
+#output-content,
+#chart-area {
+    min-height: 40vh;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+/* 小屏幕优化：针对 iPhone 14 / mini / SE */
+@media screen and (max-width: 390px) {
+    h1 {
+        font-size: 7vw;
+    }
+
+    #app {
+        padding: 3vw;
+    }
+
+    #output-content,
+    #chart-area {
+        min-height: 35vh;
+        max-height: 70vh;
+    }
 }
