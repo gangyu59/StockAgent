@@ -94,76 +94,82 @@ async function translateTextToEnglish(text) {
 
 
 async function captureTabAsImage(tabId) {
-  // 切换 tab 显示
-  const allTabs = ['overview-tab', 'news-tab', 'chart-tab', 'ai-tab'];
-  allTabs.forEach(id => {
-    const tab = document.getElementById(id);
-    if (tab) tab.style.display = (id === tabId) ? 'block' : 'none';
+  // 激活目标 tab 按钮
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.tab === tabId);
   });
 
-  // 等待渲染（图表需要多一点时间）
-  await new Promise(resolve => setTimeout(resolve, tabId === 'chart-tab' ? 500 : 200));
+  // 激活目标 tab 内容
+  document.querySelectorAll('.tab-content').forEach(tab => {
+    tab.style.display = (tab.id === tabId) ? 'block' : 'none';
+  });
+
+  // 强制浏览器 reflow 并等待渲染
+  await new Promise(resolve => setTimeout(resolve, 500));
 
   const element = document.getElementById(tabId);
-  if (!element) {
-    console.warn(`Tab element "${tabId}" not found`);
-    return null;
-  }
+  const canvas = await html2canvas(element, {
+    useCORS: true,
+    allowTaint: true,
+    logging: false
+  });
 
-  try {
-    const canvas = await html2canvas(element, {
-      scale: 2,
-      useCORS: true,
-      allowTaint: false,
-      backgroundColor: '#ffffff'
-    });
-    return canvas.toDataURL('image/png');
-  } catch (err) {
-    console.error(`Error capturing tab "${tabId}":`, err);
-    return null;
-  }
+  return canvas.toDataURL('image/png');
 }
 
 async function exportReportAsPDF(symbol) {
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF('p', 'mm', 'a4');
-  const imageHeight = 297;
-  const imageWidth = 210;
+
+  const pageWidth = 210;
+  const pageHeight = 297;
+
+  const margin = 10; // 上下左右都留 10mm
+  const usableWidth = pageWidth - margin * 2;
+  const usableHeight = pageHeight - margin * 2;
 
   const tabs = ['overview-tab', 'news-tab', 'chart-tab', 'ai-tab'];
 
   for (let i = 0; i < tabs.length; i++) {
     const imgData = await captureTabAsImage(tabs[i]);
-    if (imgData) {
-      if (i > 0) pdf.addPage();
-				 const img = new Image();
-				img.src = imgData;
-				
-				await new Promise(resolve => {
-				  img.onload = () => {
-				    const ratio = img.width / img.height;
-				    const targetWidth = imageWidth;
-				    const targetHeight = imageWidth / ratio; // 按宽度等比缩放
-				    const yOffset = Math.max((imageHeight - targetHeight) / 2, 0); // 垂直居中（可选）
-				
-				    pdf.addImage(img, 'PNG', 0, yOffset, targetWidth, targetHeight);
-				    resolve();
-				  };
-				});
-      console.log(`✅ Added image for tab ${tabs[i]}`);
-    } else {
-      console.warn(`⚠️ Skipped tab "${tabs[i]}"`);
-    }
+
+    const img = new Image();
+    img.src = imgData;
+
+    await new Promise(resolve => {
+      img.onload = () => {
+        const imgWidth = usableWidth;
+        const imgHeight = (img.height * imgWidth) / img.width;
+
+        const totalPages = Math.ceil(imgHeight / usableHeight);
+
+        for (let page = 0; page < totalPages; page++) {
+          if (page > 0 || i > 0) pdf.addPage();
+
+          const sourceY = (img.height / totalPages) * page;
+          const sourceHeight = (img.height / totalPages);
+
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = img.width;
+          tempCanvas.height = sourceHeight;
+          const ctx = tempCanvas.getContext('2d');
+
+          ctx.drawImage(
+            img,
+            0, sourceY, img.width, sourceHeight,
+            0, 0, img.width, sourceHeight
+          );
+
+          const croppedData = tempCanvas.toDataURL('image/png');
+          pdf.addImage(croppedData, 'PNG', margin, margin, imgWidth, usableHeight);
+        }
+
+        resolve();
+      };
+    });
   }
 
-  // 恢复显示所有 tab
-  tabs.forEach(id => {
-    const tab = document.getElementById(id);
-    if (tab) tab.style.display = 'block';
-  });
-
   pdf.save(`${symbol}_report.pdf`);
-  console.log("PDF download complete");
 }
 
 document.addEventListener('DOMContentLoaded', () => {
