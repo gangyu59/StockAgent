@@ -22,25 +22,6 @@ window.reportGenerator = (function () {
     };
 })();
 
-
-
-
-function drawTableRow(page, rowText, x, y, colWidths, font, fontSize) {
-  const cols = rowText.split('|').map(col => col.trim());
-  let xPos = x;
-
-  for (let i = 0; i < cols.length; i++) {
-    const colText = cols[i];
-    page.drawText(colText, {
-      x: xPos + 2,
-      y,
-      size: fontSize,
-      font,
-    });
-    xPos += colWidths[i] || 100;
-  }
-}
-
 function sanitizeText(text) {
   return text
     // 移除 GPT 返回中的转义 Unicode（如 \u2191）
@@ -111,192 +92,92 @@ async function translateTextToEnglish(text) {
     return result?.trim();
 }
 
-// 绑定“下载 PDF 报告”按钮事件（英文版）
-document.getElementById('download-pdf-btn').addEventListener('click', async () => {
-    const input = document.querySelector('input[type="text"]');
-    if (!input || !input.value.trim()) {
-        alert('请输入有效的股票代码');
-        return;
-    }
 
-    const symbol = input.value.trim().toUpperCase();
-    const key = `${symbol}_REPORT`;
+async function captureTabAsImage(tabId) {
+  // 切换 tab 显示
+  const allTabs = ['overview-tab', 'news-tab', 'chart-tab', 'ai-tab'];
+  allTabs.forEach(id => {
+    const tab = document.getElementById(id);
+    if (tab) tab.style.display = (id === tabId) ? 'block' : 'none';
+  });
 
-		toggleHourglass(true);
-    try {
-        const record = await StockDB.loadStockData(symbol, 'REPORT');
-        if (!record || !record.data) {
-            alert(`未找到 ${symbol} 的分析报告，请先生成`);
-            return;
-        }
+  // 等待渲染（图表需要多一点时间）
+  await new Promise(resolve => setTimeout(resolve, tabId === 'chart-tab' ? 500 : 200));
 
-        const chineseText = record.data;
-        const englishText = await translateTextToEnglish(chineseText);
-        if (!englishText) {
-            throw new Error('翻译失败或结果为空');
-        }
+  const element = document.getElementById(tabId);
+  if (!element) {
+    console.warn(`Tab element "${tabId}" not found`);
+    return null;
+  }
 
-				console.log("清理之前：", englishText);
-        const cleanText = sanitizeText(englishText);
-				console.log("清理之后：", cleanText);
-				
-				await generatePdfReport(symbol, cleanText);
-    } catch (err) {
-        console.error('[PDF] 报告生成失败:', err);
-        alert('报告下载失败，请稍后再试');
-    }
-		
-		toggleHourglass(false);
-});
-
-async function generatePdfReport(symbol, reportText) {
   try {
-    const { PDFDocument, rgb, StandardFonts } = PDFLib;
-
-    console.log('[PDF] 开始生成英文报告 PDF：', symbol);
-
-    const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    let page = pdfDoc.addPage([595, 842]); // A4尺寸
-
-    const fontSizeNormal = 12;
-    const fontSizeTitle = 16;
-    const lineHeight = 20;
-    const margin = 40;
-    const maxWidth = 515;
-    let textY = 800;
-
-    const paragraphs = splitTextToParagraphs(reportText);
-    console.log('[PDF] 段落数：', paragraphs.length);
-
-    function drawTableRow(page, rowText, x, y, colWidths, font, fontSize) {
-      const cols = rowText.split('|').map(col => col.trim());
-      let xPos = x;
-
-      for (let i = 0; i < cols.length; i++) {
-        const colText = cols[i];
-        page.drawText(colText, {
-          x: xPos + 2,
-          y,
-          size: fontSize,
-          font,
-        });
-        xPos += colWidths[i] || 100;
-      }
-    }
-
-    for (let para of paragraphs) {
-      if (textY < margin + lineHeight * 2) {
-        page = pdfDoc.addPage([595, 842]);
-        textY = 800;
-      }
-
-      // 表格检测与绘制
-      if (para.includes('|')) {
-        const tableLines = para.split('\n').filter(line => line.includes('|'));
-        const colCount = tableLines[0].split('|').length;
-        const colWidth = (maxWidth - 20) / colCount;
-        const colWidths = new Array(colCount).fill(colWidth);
-
-        for (let line of tableLines) {
-          if (textY < margin + lineHeight) {
-            page = pdfDoc.addPage([595, 842]);
-            textY = 800;
-          }
-          drawTableRow(page, line, margin, textY, colWidths, font, fontSizeNormal);
-          textY -= lineHeight;
-        }
-        textY -= 10;
-        continue;
-      }
-
-      const isTitle = /^\d+\.\s/.test(para);
-      const isSubTitle = /^[A-Z][A-Za-z\s]+:\s*/.test(para);
-      const isBullet = /^-\s/.test(para);
-
-      const fontSize = isTitle ? fontSizeTitle : fontSizeNormal;
-      const indent = isBullet ? margin + 20 : isSubTitle ? margin + 15 : margin;
-      const color = rgb(0, 0, 0);
-
-      const lines = splitTextToLines(para, font, fontSize, maxWidth - (indent - margin));
-      for (let line of lines) {
-        if (textY < margin + lineHeight) {
-          page = pdfDoc.addPage([595, 842]);
-          textY = 800;
-        }
-        page.drawText(line, {
-          x: indent,
-          y: textY,
-          size: fontSize,
-          font,
-          color,
-        });
-        textY -= lineHeight;
-      }
-
-      textY -= isTitle ? 8 : 10;
-    }
-
-    // 添加页码
-    const pages = pdfDoc.getPages();
-    pages.forEach((p, index) => {
-      p.drawText(`Page ${index + 1}`, {
-        x: 500,
-        y: 20,
-        size: 10,
-        font,
-        color: rgb(0.5, 0.5, 0.5),
-      });
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: '#ffffff'
     });
-
-    const pdfBytes = await pdfDoc.save();
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${symbol}_Investment_Report.pdf`;
-    link.click();
-
-    console.log('[PDF] 英文报告下载完成');
+    return canvas.toDataURL('image/png');
   } catch (err) {
-    console.error('[PDF] 英文报告生成失败:', err);
-    alert('PDF 下载失败，请稍后再试');
+    console.error(`Error capturing tab "${tabId}":`, err);
+    return null;
   }
 }
 
-function splitTextToParagraphs(text) {
-  const result = [];
-  const parts = text.split(/(?=\d+\.\s|[A-Z][a-z]+:|- )/g);
-  for (let part of parts) {
-    const trimmed = part.trim();
-    if (trimmed) result.push(trimmed);
-  }
-  return result;
-}
+async function exportReportAsPDF(symbol) {
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF('p', 'mm', 'a4');
+  const imageHeight = 297;
+  const imageWidth = 210;
 
-function splitTextToLines(text, font, fontSize, maxWidth) {
-  const words = text.trim().split(/\s+/).filter(Boolean);
-  const lines = [];
-  let currentLine = '';
+  const tabs = ['overview-tab', 'news-tab', 'chart-tab', 'ai-tab'];
 
-  for (let i = 0; i < words.length; i++) {
-    const word = words[i];
-    const testLine = currentLine ? currentLine + ' ' + word : word;
-    let width = 0;
-    try {
-      width = font.widthOfTextAtSize(testLine, fontSize);
-    } catch (e) {
-      console.warn('[PDF] 测量失败：', testLine);
-      width = 9999;
-    }
-
-    if (width > maxWidth) {
-      lines.push(currentLine.trim());
-      currentLine = word;
+  for (let i = 0; i < tabs.length; i++) {
+    const imgData = await captureTabAsImage(tabs[i]);
+    if (imgData) {
+      if (i > 0) pdf.addPage();
+				 const img = new Image();
+				img.src = imgData;
+				
+				await new Promise(resolve => {
+				  img.onload = () => {
+				    const ratio = img.width / img.height;
+				    const targetWidth = imageWidth;
+				    const targetHeight = imageWidth / ratio; // 按宽度等比缩放
+				    const yOffset = Math.max((imageHeight - targetHeight) / 2, 0); // 垂直居中（可选）
+				
+				    pdf.addImage(img, 'PNG', 0, yOffset, targetWidth, targetHeight);
+				    resolve();
+				  };
+				});
+      console.log(`✅ Added image for tab ${tabs[i]}`);
     } else {
-      currentLine = testLine;
+      console.warn(`⚠️ Skipped tab "${tabs[i]}"`);
     }
   }
 
-  if (currentLine) lines.push(currentLine.trim());
-  return lines;
+  // 恢复显示所有 tab
+  tabs.forEach(id => {
+    const tab = document.getElementById(id);
+    if (tab) tab.style.display = 'block';
+  });
+
+  pdf.save(`${symbol}_report.pdf`);
+  console.log("PDF download complete");
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('download-pdf-btn');
+  if (!btn) return;
+  btn.addEventListener('click', async () => {
+    toggleHourglass(true);
+    const symbol = document.getElementById('stock-code').value.trim().toUpperCase();
+    if (!symbol) {
+      alert('请输入有效的股票代码');
+      toggleHourglass(false);
+      return;
+    }
+    await exportReportAsPDF(symbol);
+    toggleHourglass(false);
+  });
+});
