@@ -1,32 +1,18 @@
-/* 组件样式：按钮 
+/* 组件样式：按钮 */
 button {
-    padding: 8px 16px;
+    padding: 8px 6px;                 /* 左右 padding 从 16px 缩小到 6px */
     margin-right: 3px;
     background-color: #007bff;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    font-size: 13px;
+    font-size: clamp(12px, 3.3vw, 14px);
     width: 21vw;
     text-align: center;
-}
-*/
-
-button {
-    padding: 8px 16px;
-    margin-right: 3px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: clamp(12px, 3.3vw, 14px);  /* 响应式字体，防炸裂 */
-    width: 21vw;
-    text-align: center;
-    white-space: nowrap;                 /* 防止文字换行 */
-    overflow: hidden;                    /* 隐藏溢出文字 */
-    text-overflow: ellipsis;            /* 超出部分省略号（保险起见） */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 button:hover {
