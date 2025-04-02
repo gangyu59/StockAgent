@@ -1,4 +1,58 @@
 // scripts/aiAnalysis.js
+async function applyAI(messages) {
+  const selectedModel = document.getElementById('ai-model').value;
+  let response;
+
+  // ✅ 修复格式问题：确保 messages 是数组
+  if (!Array.isArray(messages)) {
+    if (typeof messages === 'string') {
+      messages = [{ role: 'user', content: messages }];
+    } else if (typeof messages === 'object' && messages.role && messages.content) {
+      messages = [messages];
+    } else {
+      throw new Error('无效的 messages 格式：必须是数组或包含 role/content 的对象');
+    }
+  }
+
+  switch (selectedModel) {
+    case 'gpt':
+      response = await callGPT(messages, {
+        testType: 'gpt',
+        max_tokens: 2000,
+        temperature: 0.7
+      });
+      break;
+
+    case 'deepseek':
+      response = await callDeepSeek(messages, {
+        testType: 'deepseek',
+        max_tokens: 5000,
+        temperature: 0.7
+      });
+      break;
+
+    case 'claude':
+      response = await callClaude(messages, {
+        testType: 'claude',
+        max_tokens: 5000,
+        temperature: 0.7
+      });
+      break;
+
+    case 'ark':
+      response = await callARK(messages, {
+        testType: 'ark',
+        max_tokens: 5000,
+        temperature: 0.7
+      });
+      break;
+
+    default:
+      throw new Error('🚨 未选择的模型或模型不支持');
+  }
+
+  return response;
+}
 
 window.aiAnalysis = (function () {
     async function generateStockReport(symbol) {
@@ -109,12 +163,15 @@ ${indicatorTable}
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
         ];
-
+/*
         const response = await callDeepSeek(messages, {
             testType: 'deepseek',
-            max_tokens: 2000,
+            max_tokens: 5000,
             temperature: 0.7
         });
+*/
+
+				const response = await applyAI(messages);
 
         const resultText = response?.choices?.[0]?.message?.content;
         if (!resultText) {
