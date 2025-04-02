@@ -1,125 +1,76 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StockAgent</title>
-    <!-- 引入 CSS 文件 -->
-    <link rel="stylesheet" href="styles/base.css">
-    <link rel="stylesheet" href="styles/components.css">
-    <link rel="stylesheet" href="styles/features.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <meta charset="utf-8">
+  <title>输入密码</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      height: 100vh;
+      margin: 0;
+      padding-top: 20vh; /* 向上平移20% */
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+    }
 
-		<!-- 引入Chart.js核心 -->
-		<script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-		<!-- 引入date-fns日期库 -->
-		<script src="https://cdn.jsdelivr.net/npm/date-fns@3.0.0/dist/date-fns.min.js"></script>
-		<!-- 引入日期适配器 -->
-		<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3.0.0/dist/chartjs-adapter-date-fns.min.js"></script>
-		<script src="https://cdn.jsdelivr.net/npm/pdf-lib/dist/pdf-lib.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-		<link rel="icon" href="assets/icons.svg">
+    h1 {
+      font-size: 6vw;
+      margin-bottom: 5vh;
+      color: #333;
+    }
+
+    input[type="password"] {
+      width: 60vw;
+      max-width: 300px;
+      height: 6vh;
+      font-size: 5vw;
+      padding: 0 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-sizing: border-box;
+    }
+
+    button {
+      margin-top: 4vh;
+      width: 65vw;
+      max-width: 320px;
+      height: 6vh;
+      font-size: 5vw;
+      font-weight: bold;
+      background-color: #28a745;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #218838;
+    }
+  </style>
 </head>
 <body>
-    <div id="container">
-        <h1>选股智能体</h1>
-        <div id="app">
-            <!-- 输入区 -->
-            <div id="input-area">
-                <input type="text" id="stock-code" placeholder="输入股票代码（如AAPL）">
-                <button id="add-stock">添至清单</button>
-								<!-- 下载 PDF 按钮 -->
-							  <button id="download-pdf-btn">下载PDF</button>
-            </div>
+  <h1>请输入访问密码</h1>
+  <input type="password" id="password" placeholder="请输入密码">
+  <button onclick="checkPassword()">进入应用</button>
 
-            <!-- 清单维护区 -->
-            <div id="stock-list-container">
-                <span id="stock-list-label">关注股票清单：</span>
-                <ul id="stock-list"></ul>
-                <span id="toggle-icon"><i class="fas fa-chevron-down"></i></span>
-            </div>
-            <ul id="expanded-stock-list"></ul>
+  <script>
+    // 页面加载时自动聚焦输入框
+    window.onload = function() {
+      document.getElementById('password').focus();
+    };
 
-            <!-- 功能按钮区 -->
-            <div id="action-buttons">
-                <button id="fetch-data">获取数据</button>
-                <button id="search-news">搜索新闻</button>
-								<button id="chart-display">生成图表</button>
-                <button id="ai-analysis">AI分析</button>
-            </div>
-
-						<!-- Tab 选项 -->
-						<div id="tab-bar">
-						  <button class="tab-btn active" data-tab="overview-tab">基础信息</button>
-						  <button class="tab-btn" data-tab="news-tab">最近新闻</button>
-						  <button class="tab-btn" data-tab="chart-tab">图表展示</button>
-						  <button class="tab-btn" data-tab="ai-tab">投资报告</button>
-						</div>
-						
-						<!-- Tab 内容区 -->
-						<div id="output-tabs">
-						  <div id="overview-tab" class="tab-content active">
-						  </div>
-							
-						  <div id="news-tab" class="tab-content">	
-						  </div>
-							
-							<!-- 图表展示 tab -->
-							<div id="chart-tab" class="tab-content">
-							  <!-- 蜡烛图容器 -->
-							  <div id="chart-container" style="width: 100%; height: 400px;"></div>
-							
-							  <!-- 分割线 -->
-							  <hr style="margin: 20px 0; border-top: 1px solid #ccc;">
-							
-							  <!-- 柱状图容器 -->
-							  <canvas id="metrics-chart" style="width: 100%; max-width: 800px; height: 300px;"></canvas>
-							</div>
-							
-						  <div id="ai-tab" class="tab-content">
-						  </div>
-						</div>
-						
-						<!-- 全局 Copy 按钮 -->
-						<button id="copy-btn" class="copy-btn">
-						  <svg class="icon copy-icon">
-						    <use href="assets/icons.svg#copy-icon"></use>
-						  </svg>
-						</button>
-						
-						<!-- 加载指示器 -->
-						<div id="loading-indicator" class="loading-hidden">
-						    <div class="hourglass"></div>
-						</div>
-						
-						<!-- 在chart-area下方添加 -->
-						<div id="debug-area" style="color:red; padding:10px; font-family:monospace;"></div>
-        </div>
-    </div>
-
-    <!-- 引入 Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- 引入 JavaScript 文件 -->
-    <script src="scripts/config.js"></script>
-		<script src="scripts/loadConfig.js"></script>
-    <script src="scripts/utils.js"></script>
-		<script src="apis/apiCore.js"></script>
-    <script src="apis/gpt.js"></script>
-    <script src="apis/deepseek.js"></script>
-    <script src="apis/ark.js"></script>
-    <script src="apis/dalle.js"></script>
-    <script src="apis/claude.js"></script>
-		<script src="scripts/dataStorage.js"></script>
-    <script src="scripts/stockManager.js"></script>
-		<script src="scripts/chartRenderer.js"></script>
-    <script src="scripts/fetchTechnicalIndicators.js"></script>		
-    <script src="scripts/dataFetching.js"></script>
-    <script src="scripts/newsSearch.js"></script>
-    <script src="scripts/aiAnalysis.js"></script>
-    <script src="scripts/chartDisplay.js"></script>
-    <script src="scripts/main.js"></script>
-		<script src="scripts/reportGeneration.js"></script>
+    function checkPassword() {
+      const pwd = document.getElementById('password').value;
+      if (pwd === 'xyz123') {
+        window.location.href = 'main.html';
+      } else {
+        alert('密码错误');
+      }
+    }
+  </script>
 </body>
 </html>
