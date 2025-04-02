@@ -36,9 +36,17 @@
 
             <!-- 清单维护区 -->
             <div id="stock-list-container">
-                <span id="stock-list-label">关注股票清单：</span>
+                <span id="stock-list-label">关注清单：</span>
                 <ul id="stock-list"></ul>
                 <span id="toggle-icon"><i class="fas fa-chevron-down"></i></span>
+								
+								<span id="ai-select-label">AI：</span>
+								<select id="ai-model" class="model-select">
+                  <option value="gpt">GPT</option>
+                  <option value="deepseek" selected>DeepSeek</option>
+                  <option value="ark">ARK</option>              
+									<option value="claude">Claude</option>
+                 </select>
             </div>
             <ul id="expanded-stock-list"></ul>
 
