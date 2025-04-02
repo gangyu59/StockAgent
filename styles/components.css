@@ -29,7 +29,7 @@ button:hover {
 #stock-list-label {
     font-size: 16px;
     font-weight: bold;
-    margin-right: 10px;
+    margin-right: 6px;
     flex-shrink: 0;
 }
 
@@ -50,7 +50,7 @@ button:hover {
     display: flex;
     align-items: center;
     gap: 0px;
-		width: 65%;
+		width:55%;
 }
 
 #stock-list li button {
@@ -76,20 +76,20 @@ button:hover {
 #toggle-icon {
     font-size: 16px;
     cursor: pointer;
-    margin-left: -90px;
+    margin-left: -100px;
 }
 
 #expanded-stock-list {
     display: none;
     list-style-type: none;
     padding: 0;
-    margin: -15px 0 0 120px;
+    margin: -15px 0 0 85px;
     background-color: white;
     border: 1px solid #ddd;
     border-radius: 5px;
     max-height: 400px;
     overflow-y: auto;
-    width: 40%;
+    width: 36%;
 }
 
 #expanded-stock-list li {
@@ -132,6 +132,21 @@ button:hover {
 #output-tabs, .tab-content {
     position: relative;
     z-index: 1;
+}
+
+#ai-select-label {
+    font-size: 16px;
+    font-weight: bold;
+    margin-left: 4vw;
+    flex-shrink: 0;
+}
+
+select {
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+		height: 36px;
+    font-size: 14px;
 }
 
 .copy-btn {
